@@ -2,13 +2,14 @@
 // @name Gfycat AutoHD
 // @author Invertex
 // @supportURL http://invertex.xyz
-// @version 1.1
+// @version 1.2
 // @description Automatically sets Gfycat video to HD mode
 // @match https://gfycat.com/*
 // @match https://*.gfycat.com/*
 // @require  https://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js
 // @grant none
 // @run-at document-start
+// @namespace https://greasyfork.org/users/137547
 // ==/UserScript==
 
 const thumbsStr = 'thumbs.gfycat.com';
@@ -26,7 +27,7 @@ const settingsButtonClass = ".settings-button";
     }
     else
     {
-        waitForKeyElements(settingsButtonClass, settingsClick);
+        waitForKeyElements(settingsButtonClass, changeSettings);
     }
 })();
 
@@ -40,7 +41,7 @@ function setHDURL(url)
     window.location = url;
 };
 
-function settingsClick(settingsButton)
+function changeSettings(settingsButton)
 {
     if(settingsButton)
     {
@@ -48,7 +49,18 @@ function settingsClick(settingsButton)
         if(settingsButton.attr("data-tooltip") === "Quality")
         {
             settingsButton.click();
+            waitForKeyElements('.progress-control', customizeProgressBar, true);
         }
+    }
+};
+
+function customizeProgressBar(progressBar)
+{
+    if(progressBar)
+    {
+        progressBar.attr('style', "height:2.4mm; background-color: hsla(0,0%,100%,.1);");
+        progressBar.find('.hover-progress').attr('style', "background-color: hsla(0,0%,100%,.2);");
+        progressBar.find('.play-progress').attr('style', "background-image: linear-gradient(90deg,rgba(58,168,255,0.3),rgba(36,117,255,0.3));");
     }
 };
 
