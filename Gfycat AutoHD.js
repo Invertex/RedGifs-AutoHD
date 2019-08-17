@@ -2,7 +2,7 @@
 // @name Gfycat AutoHD
 // @author Invertex
 // @supportURL http://invertex.xyz
-// @version 1.0
+// @version 1.1
 // @description Automatically sets Gfycat video to HD mode
 // @match https://gfycat.com/*
 // @match https://*.gfycat.com/*
@@ -11,7 +11,8 @@
 // @run-at document-start
 // ==/UserScript==
 
-const thumbsStr = 'thumbs.gfycat';
+const thumbsStr = 'thumbs.gfycat.com';
+const giantStr = 'giant.gfycat.com';
 const mobileStr = '-mobile.';
 const settingsButtonClass = ".settings-button";
 
@@ -31,7 +32,7 @@ const settingsButtonClass = ".settings-button";
 
 function setHDURL(url)
 {
-    url = url.replace(thumbsStr, 'giant.gfycat');
+    url = url.replace(thumbsStr, giantStr);
     if(url.includes(mobileStr))
     {
         url = url.replace(mobileStr, '.');
@@ -41,7 +42,14 @@ function setHDURL(url)
 
 function settingsClick(settingsButton)
 {
-    if(settingsButton) { settingsButton.click() }
+    if(settingsButton)
+    {
+        //In case some webpage uses same class name for something, check for data-tooltip to reduce any chance of false positive
+        if(settingsButton.attr("data-tooltip") === "Quality")
+        {
+            settingsButton.click();
+        }
+    }
 };
 
 //Had to directly include waitForKeyElements.js since Greasyfork hasn't approved the include...
