@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name Gfycat AutoHD
 // @author Invertex
-// @supportURL http://invertex.xyz
+// @supportURL https://github.com/Invertex/Gfycat-AutoHD
 // @version 1.2
 // @description Automatically sets Gfycat video to HD mode
 // @match https://gfycat.com/*
