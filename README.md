@@ -1,5 +1,5 @@
 # Gfycat-AutoHD
-Automatically changes Gfycat videos to HD mode
+Automatically changes Gfycat videos to HD mode, improves progress bar interaction and strips "upgrade to pro" adverts.
 
 Should work on sites that embed Gfycat as well, including Reddit.
 
