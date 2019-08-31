@@ -17,7 +17,7 @@ const giantStr = 'giant.gfycat.com';
 const mobileStr = '-mobile.';
 const settingsButtonClass = ".settings-button";
 const proUpgradeClass = ".pro-cta";
-const proUpgradeNotificationClass = "toast-notification--pro-cta";
+const proUpgradeNotificationClass = ".toast-notification--pro-cta";
 
 (function()
 {
