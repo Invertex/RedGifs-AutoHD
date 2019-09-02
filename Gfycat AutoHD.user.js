@@ -8,7 +8,7 @@
 // @homepageURL https://github.com/Invertex/Gfycat-AutoHD
 // @supportURL https://github.com/Invertex/Gfycat-AutoHD
 // @updateURL https://github.com/Invertex/Gfycat-AutoHD/raw/master/Gfycat%20AutoHD.user.js
-// @version 1.32
+// @version 1.33
 // @match https://gfycat.com/*
 // @match https://*.gfycat.com/*
 // @require  https://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js
