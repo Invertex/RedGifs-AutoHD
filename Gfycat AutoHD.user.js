@@ -4,7 +4,7 @@
 // @description Automatically sets Gfycat video to HD mode and other improvements
 // @icon https://github.com/Invertex/Gfycat-AutoHD/raw/master/logo.png
 // @namespace https://greasyfork.org/users/137547
-// @license GPLv3 - http://www.gnu.org/licenses/gpl-3.0.txt
+// @license GPL-3.0-or-later; http://www.gnu.org/licenses/gpl-3.0.txt
 // @homepageURL https://github.com/Invertex/Gfycat-AutoHD
 // @supportURL https://github.com/Invertex/Gfycat-AutoHD
 // @updateURL https://github.com/Invertex/Gfycat-AutoHD/raw/master/Gfycat%20AutoHD.user.js
