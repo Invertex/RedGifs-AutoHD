@@ -1,15 +1,20 @@
 // ==UserScript==
 // @name Gfycat AutoHD
 // @author Invertex
-// @supportURL https://github.com/Invertex/Gfycat-AutoHD
-// @version 1.32
 // @description Automatically sets Gfycat video to HD mode and other improvements
+// @icon https://github.com/Invertex/Gfycat-AutoHD/raw/master/logo.png
+// @namespace https://greasyfork.org/users/137547
+// @license GPLv3 - http://www.gnu.org/licenses/gpl-3.0.txt
+// @homepageURL https://github.com/Invertex/Gfycat-AutoHD
+// @supportURL https://github.com/Invertex/Gfycat-AutoHD
+// @updateURL https://github.com/Invertex/Gfycat-AutoHD/raw/master/Gfycat%20AutoHD.user.js
+// @version 1.32
 // @match https://gfycat.com/*
 // @match https://*.gfycat.com/*
 // @require  https://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js
 // @grant none
 // @run-at document-start
-// @namespace https://greasyfork.org/users/137547
+
 // ==/UserScript==
 
 const thumbsStr = 'thumbs.gfycat.com';
