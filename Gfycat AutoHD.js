@@ -2,7 +2,7 @@
 // @name Gfycat AutoHD
 // @author Invertex
 // @supportURL https://github.com/Invertex/Gfycat-AutoHD
-// @version 1.31
+// @version 1.32
 // @description Automatically sets Gfycat video to HD mode and other improvements
 // @match https://gfycat.com/*
 // @match https://*.gfycat.com/*
@@ -18,6 +18,8 @@ const mobileStr = '-mobile.';
 const settingsButtonClass = ".settings-button";
 const proUpgradeClass = ".pro-cta";
 const proUpgradeNotificationClass = ".toast-notification--pro-cta";
+const topSlotAdClass = ".top-slot";
+const sideSlotAdClass = ".side-slot";
 
 (function()
 {
@@ -32,6 +34,9 @@ const proUpgradeNotificationClass = ".toast-notification--pro-cta";
         waitForKeyElements(settingsButtonClass, changeSettings);
         waitForKeyElements(proUpgradeClass, deleteElement);
         waitForKeyElements(proUpgradeNotificationClass, deleteElement);
+        //Delete the third-party advertisements in case adblockers aren't able to catch them.
+        waitForKeyElements(topSlotAdClass, deleteElement);
+        waitForKeyElements(sideSlotAdClass, deleteElement);
     }
 })();
 
