@@ -7,8 +7,7 @@
 // @license GPL-3.0-or-later; http://www.gnu.org/licenses/gpl-3.0.txt
 // @homepageURL https://github.com/Invertex/Gfycat-AutoHD
 // @supportURL https://github.com/Invertex/Gfycat-AutoHD
-// @updateURL https://github.com/Invertex/Gfycat-AutoHD/raw/master/Gfycat%20AutoHD.user.js
-// @version 1.33
+// @version 1.34
 // @match https://gfycat.com/*
 // @match https://*.gfycat.com/*
 // @require  https://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js
@@ -37,11 +36,11 @@ const sideSlotAdClass = ".side-slot";
     else
     {
         waitForKeyElements(settingsButtonClass, changeSettings);
-        waitForKeyElements(proUpgradeClass, deleteElement);
-        waitForKeyElements(proUpgradeNotificationClass, deleteElement);
+        waitForKeyElements(proUpgradeClass, hideElem);
+        waitForKeyElements(proUpgradeNotificationClass, hideElem);
         //Delete the third-party advertisements in case adblockers aren't able to catch them.
-        waitForKeyElements(topSlotAdClass, deleteElement);
-        waitForKeyElements(sideSlotAdClass, deleteElement);
+        waitForKeyElements(topSlotAdClass, hideElem);
+        waitForKeyElements(sideSlotAdClass, hideElem);
     }
 })();
 
@@ -68,12 +67,9 @@ function changeSettings(settingsButton)
     }
 };
 
-function deleteElement(elem)
+function hideElem(elem)
 {
-    if(elem)
-    {
-        elem.remove();
-    }
+    if(elem) { elem.hide(); }
 };
 
 function customizeProgressBar(progressBar)
@@ -89,51 +85,39 @@ function customizeProgressBar(progressBar)
 //Had to directly include waitForKeyElements.js since Greasyfork hasn't approved the include...
 //Following function by https://gist.github.com/BrockA
 function waitForKeyElements (
-    selectorTxt,    /* Required: The jQuery selector string that
-                        specifies the desired element(s).
-                    */
-    actionFunction, /* Required: The code to run when elements are
-                        found. It is passed a jNode to the matched
-                        element.
-                    */
-    bWaitOnce,      /* Optional: If false, will continue to scan for
-                        new elements even after the first match is
-                        found.
-                    */
-    iframeSelector  /* Optional: If set, identifies the iframe to
-                        search.
-                    */
+    selectorTxt,    /* Required: The jQuery selector string that specifies the desired element(s). */
+    actionFunction, /* Required: The code to run when elements are found. It is passed a jNode to the matched element. */
+    bWaitOnce,      /* Optional: If false, will continue to scan for new elements even after the first match is found. */
+    iframeSelector  /* Optional: If set, identifies the iframe to search. */
 ) {
     var targetNodes, btargetsFound;
 
     if (typeof iframeSelector == "undefined")
-        targetNodes     = $(selectorTxt);
+        targetNodes = $(selectorTxt);
     else
-        targetNodes     = $(iframeSelector).contents ()
-                                           .find (selectorTxt);
+        targetNodes = $(iframeSelector).contents().find (selectorTxt);
 
-    if (targetNodes  &&  targetNodes.length > 0) {
-        btargetsFound   = true;
+    if (targetNodes && targetNodes.length > 0)
+    {
+        btargetsFound = true;
         /*--- Found target node(s).  Go through each and act if they
             are new.
         */
-        targetNodes.each ( function () {
+        targetNodes.each( function()
+        {
             var jThis        = $(this);
-            var alreadyFound = jThis.data ('alreadyFound')  ||  false;
+            var alreadyFound = jThis.data ('alreadyFound') || false;
 
-            if (!alreadyFound) {
+            if (!alreadyFound)
+            {
                 //--- Call the payload function.
-                var cancelFound     = actionFunction (jThis);
-                if (cancelFound)
-                    btargetsFound   = false;
-                else
-                    jThis.data ('alreadyFound', true);
+                var cancelFound = actionFunction (jThis);
+                if (cancelFound) { btargetsFound = false; }
+                else { jThis.data ('alreadyFound', true); }
             }
         } );
     }
-    else {
-        btargetsFound   = false;
-    }
+    else { btargetsFound = false; }
 
     //--- Get the timer-control variable for this selector.
     var controlObj      = waitForKeyElements.controlObj  ||  {};
@@ -141,7 +125,7 @@ function waitForKeyElements (
     var timeControl     = controlObj [controlKey];
 
     //--- Now set or clear the timer as appropriate.
-    if (btargetsFound  &&  bWaitOnce  &&  timeControl) {
+    if (btargetsFound && bWaitOnce && timeControl) {
         //--- The only condition where we need to clear the timer.
         clearInterval (timeControl);
         delete controlObj [controlKey]
@@ -149,15 +133,7 @@ function waitForKeyElements (
     else {
         //--- Set a timer, if needed.
         if ( ! timeControl) {
-            timeControl = setInterval ( function () {
-                    waitForKeyElements (    selectorTxt,
-                                            actionFunction,
-                                            bWaitOnce,
-                                            iframeSelector
-                                        );
-                },
-                300
-            );
+            timeControl = setInterval (function(){ waitForKeyElements(selectorTxt, actionFunction, bWaitOnce, iframeSelector); }, 300);
             controlObj [controlKey] = timeControl;
         }
     }
