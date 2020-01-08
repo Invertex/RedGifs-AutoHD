@@ -1,23 +1,25 @@
 // ==UserScript==
 // @name Gfycat AutoHD
 // @author Invertex
-// @description Automatically sets Gfycat video to HD mode and other improvements
+// @description Automatically sets Gfycat/RedGifs video to HD mode and other improvements
 // @icon https://github.com/Invertex/Gfycat-AutoHD/raw/master/logo.png
 // @namespace https://greasyfork.org/users/137547
 // @license GPL-3.0-or-later; http://www.gnu.org/licenses/gpl-3.0.txt
 // @homepageURL https://github.com/Invertex/Gfycat-AutoHD
 // @supportURL https://github.com/Invertex/Gfycat-AutoHD
-// @version 1.34
+// @version 1.39
 // @match https://gfycat.com/*
 // @match https://*.gfycat.com/*
+// @match https://redgifs.com/*
+// @match https://*.redgifs.com/*
 // @require  https://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js
 // @grant none
 // @run-at document-start
 
 // ==/UserScript==
-
-const thumbsStr = 'thumbs.gfycat.com';
-const giantStr = 'giant.gfycat.com';
+var isAdultSite;
+const thumbsStr = '//thumbs.';
+const giantStr = '//giant.';
 const mobileStr = '-mobile.';
 const settingsButtonClass = ".settings-button";
 const proUpgradeClass = ".pro-cta";
@@ -28,6 +30,7 @@ const sideSlotAdClass = ".side-slot";
 (function()
 {
     var url = window.location.href;
+    isAdultSite = url.includes("redgifs.");
 
     if (url.includes(thumbsStr))
     {
@@ -76,9 +79,14 @@ function customizeProgressBar(progressBar)
 {
     if(progressBar)
     {
-        progressBar.attr('style', "height:2.4mm; background-color: hsla(0,0%,100%,.1);");
-        progressBar.find('.hover-progress').attr('style', "background-color: hsla(0,0%,100%,.2);");
-        progressBar.find('.play-progress').attr('style', "background-image: linear-gradient(90deg,rgba(58,168,255,0.3),rgba(36,117,255,0.3));");
+        if(isAdultSite) { progressBar.attr('style', "height:2.4mm;"); }
+        else
+        {
+            progressBar.attr('style', "height:2.4mm; background-color: hsla(0,0%,100%,.1);");
+            progressBar.find('.hover-progress').attr('style', "background-color: hsla(0,0%,100%,.2);");
+            progressBar.find('.play-progress').attr('style', "background-image: linear-gradient(90deg,rgba(58,168,255,0.3),rgba(36,117,255,0.3));");
+        }
+        progressBar.find('.progress-knob').attr('style', "margin-top: 0.6em;");
     }
 };
 
@@ -137,5 +145,5 @@ function waitForKeyElements (
             controlObj [controlKey] = timeControl;
         }
     }
-    waitForKeyElements.controlObj   = controlObj;
+    waitForKeyElements.controlObj = controlObj;
 }
