@@ -7,12 +7,13 @@
 // @license GPL-3.0-or-later; http://www.gnu.org/licenses/gpl-3.0.txt
 // @homepageURL https://github.com/Invertex/Gfycat-AutoHD
 // @supportURL https://github.com/Invertex/Gfycat-AutoHD
-// @version 1.39
-// @match https://gfycat.com/*
-// @match https://*.gfycat.com/*
-// @match https://redgifs.com/*
-// @match https://*.redgifs.com/*
-// @require  https://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js
+// @version 1.50
+// @match *://*.gifdeliverynetwork.com/*
+// @match *://cdn.embedly.com/widgets/media.html?src=*://*.gfycat.com/*
+// @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
+// @match *://*.gfycat.com/*
+// @match *://*.redgifs.com/*
+// @require https://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js
 // @grant none
 // @run-at document-start
 
@@ -21,11 +22,15 @@ var isAdultSite;
 const thumbsStr = '//thumbs.';
 const giantStr = '//giant.';
 const mobileStr = '-mobile.';
-const settingsButtonClass = ".settings-button";
-const proUpgradeClass = ".pro-cta";
-const proUpgradeNotificationClass = ".toast-notification--pro-cta";
-const topSlotAdClass = ".top-slot";
-const sideSlotAdClass = ".side-slot";
+const iframeStr = '/ifr/';
+const iframeVideoClass = 'video.media';
+const settingsButtonClass = '.settings-button';
+const progressControlClass = '.progress-control';
+const proUpgradeClass = '.pro-cta';
+const proUpgradeNotificationClass = '.toast-notification--pro-cta';
+const topSlotAdClass = '.top-slot';
+const sideSlotAdClass = '.side-slot';
+const trackingPixel = 'img.tracking-pixel';
 
 (function()
 {
@@ -36,6 +41,13 @@ const sideSlotAdClass = ".side-slot";
     {
         setHDURL(url);
     }
+    else if(url.includes(iframeStr))
+    {
+        waitForKeyElements(iframeVideoClass, removeMobileQualityVideos);
+        waitForKeyElements('span.hosted-by-text', removeUglyHostedByText);
+        waitForKeyElements(progressControlClass, customizeProgressBar, true);
+
+    }
     else
     {
         waitForKeyElements(settingsButtonClass, changeSettings);
@@ -45,6 +57,8 @@ const sideSlotAdClass = ".side-slot";
         waitForKeyElements(topSlotAdClass, hideElem);
         waitForKeyElements(sideSlotAdClass, hideElem);
     }
+    //C'mon gfycat, don't be doing that cross-site tracking
+    waitForKeyElements(trackingPixel, removeTracker);
 })();
 
 function setHDURL(url)
@@ -57,6 +71,30 @@ function setHDURL(url)
     window.location = url;
 };
 
+function removeMobileQualityVideos(video)
+{
+    //For some reason video returns null... but this will work
+    video = document.querySelector(iframeVideoClass);
+    let sources = video.getElementsByTagName("SOURCE");
+
+    for(let i = sources.length - 1; i >= 0; i--)
+    {
+        if(sources[i].src.includes(mobileStr)) { sources[i].remove(); }
+    }
+
+    video.load();
+};
+
+function removeUglyHostedByText(hostedTextElem)
+{
+    if(hostedTextElem != null) { hostedTextElem.remove(); }
+};
+
+function removeTracker(tracker)
+{
+    if(tracker != null) { tracker.remove(); }
+};
+
 function changeSettings(settingsButton)
 {
     if(settingsButton)
@@ -65,9 +103,9 @@ function changeSettings(settingsButton)
         if(settingsButton.attr("data-tooltip") === "Quality")
         {
             settingsButton.click();
-            waitForKeyElements('.progress-control', customizeProgressBar, true);
         }
     }
+    waitForKeyElements(progressControlClass, customizeProgressBar, true);
 };
 
 function hideElem(elem)
