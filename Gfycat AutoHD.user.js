@@ -7,7 +7,7 @@
 // @license GPL-3.0-or-later; http://www.gnu.org/licenses/gpl-3.0.txt
 // @homepageURL https://github.com/Invertex/Gfycat-AutoHD
 // @supportURL https://github.com/Invertex/Gfycat-AutoHD
-// @version 1.50
+// @version 1.51
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.gfycat.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
@@ -22,7 +22,6 @@ var isAdultSite;
 const thumbsStr = '//thumbs.';
 const giantStr = '//giant.';
 const mobileStr = '-mobile.';
-const iframeStr = '/ifr/';
 const iframeVideoClass = 'video.media';
 const settingsButtonClass = '.settings-button';
 const progressControlClass = '.progress-control';
@@ -41,12 +40,11 @@ const trackingPixel = 'img.tracking-pixel';
     {
         setHDURL(url);
     }
-    else if(url.includes(iframeStr))
+    else if(url.includes('embedly') || url.includes('gifdeliverynetwork'))
     {
         waitForKeyElements(iframeVideoClass, removeMobileQualityVideos);
         waitForKeyElements('span.hosted-by-text', removeUglyHostedByText);
         waitForKeyElements(progressControlClass, customizeProgressBar, true);
-
     }
     else
     {
