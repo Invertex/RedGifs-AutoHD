@@ -7,7 +7,7 @@
 // @license GPL-3.0-or-later; http://www.gnu.org/licenses/gpl-3.0.txt
 // @homepageURL https://github.com/Invertex/Gfycat-AutoHD
 // @supportURL https://github.com/Invertex/Gfycat-AutoHD
-// @version 1.51
+// @version 1.52
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.gfycat.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
@@ -45,6 +45,8 @@ const trackingPixel = 'img.tracking-pixel';
         waitForKeyElements(iframeVideoClass, removeMobileQualityVideos);
         waitForKeyElements('span.hosted-by-text', removeUglyHostedByText);
         waitForKeyElements(progressControlClass, customizeProgressBar, true);
+        //C'mon gfycat, don't be doing that cross-site tracking
+        waitForKeyElements(trackingPixel, removeTracker);
     }
     else
     {
@@ -55,8 +57,6 @@ const trackingPixel = 'img.tracking-pixel';
         waitForKeyElements(topSlotAdClass, hideElem);
         waitForKeyElements(sideSlotAdClass, hideElem);
     }
-    //C'mon gfycat, don't be doing that cross-site tracking
-    waitForKeyElements(trackingPixel, removeTracker);
 })();
 
 function setHDURL(url)
