@@ -7,7 +7,7 @@
 // @license GPL-3.0-or-later; http://www.gnu.org/licenses/gpl-3.0.txt
 // @homepageURL https://github.com/Invertex/Gfycat-AutoHD
 // @supportURL https://github.com/Invertex/Gfycat-AutoHD
-// @version 1.56
+// @version 1.57
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.gfycat.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
@@ -18,7 +18,6 @@
 // @run-at document-start
 
 // ==/UserScript==
-
 var isAdultSite;
 const thumbsSubDomain = '//thumbs.';
 const hdSubDomain = '//giant.';
@@ -31,6 +30,7 @@ const proUpgradeNotificationClass = '.toast-notification--pro-cta';
 const topSlotAdClass = '.top-slot';
 const sideSlotAdClass = '.side-slot';
 const trackingPixel = 'img.tracking-pixel';
+const annoyingSignupSelector = 'div.signup-call-to-action';
 const autoplayButtonSelector = "div.upnext-control div.switch input[type='checkbox']";
 
 //Extra option to force Autoplay on/off if user wants to set this manually in the script so the setting can work in private browsing modes as well. You will have to edit this value again whenever a script update is pushed though.
@@ -61,6 +61,7 @@ const autoplayForcedOnOff = null; //Replace 'null' with 'true' or 'false' depend
         //Delete the third-party advertisements in case adblockers aren't able to catch them.
         waitForKeyElements(topSlotAdClass, hideElem);
         waitForKeyElements(sideSlotAdClass, hideElem);
+        waitForKeyElements(annoyingSignupSelector, hideElem);
 		if(autoplayForcedOnOff !== null) { waitForKeyElements(autoplayButtonSelector, setAutoplayState); }
     }
 })();
