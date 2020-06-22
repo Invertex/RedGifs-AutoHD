@@ -7,7 +7,7 @@
 // @license GPL-3.0-or-later; http://www.gnu.org/licenses/gpl-3.0.txt
 // @homepageURL https://github.com/Invertex/Gfycat-AutoHD
 // @supportURL https://github.com/Invertex/Gfycat-AutoHD
-// @version 1.55
+// @version 1.56
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.gfycat.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
@@ -67,7 +67,7 @@ const autoplayForcedOnOff = null; //Replace 'null' with 'true' or 'false' depend
 
 function setHDURL(url)
 {
-    url = url.replace(thumbsSubDomain, thumbsSubDomain);
+    url = url.replace(thumbsSubDomain, hdSubDomain);
     if(url.includes(mobileAffix))
     {
         url = url.replace(mobileAffix, '.');
