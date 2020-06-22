@@ -7,7 +7,7 @@
 // @license GPL-3.0-or-later; http://www.gnu.org/licenses/gpl-3.0.txt
 // @homepageURL https://github.com/Invertex/Gfycat-AutoHD
 // @supportURL https://github.com/Invertex/Gfycat-AutoHD
-// @version 1.52
+// @version 1.55
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.gfycat.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
@@ -18,25 +18,30 @@
 // @run-at document-start
 
 // ==/UserScript==
+
 var isAdultSite;
-const thumbsStr = '//thumbs.';
-const giantStr = '//giant.';
-const mobileStr = '-mobile.';
+const thumbsSubDomain = '//thumbs.';
+const hdSubDomain = '//giant.';
+const mobileAffix = '-mobile.';
 const iframeVideoClass = 'video.media';
-const settingsButtonClass = '.settings-button';
+const settingsButtonClass = 'span.settings-button div.quality';
 const progressControlClass = '.progress-control';
 const proUpgradeClass = '.pro-cta';
 const proUpgradeNotificationClass = '.toast-notification--pro-cta';
 const topSlotAdClass = '.top-slot';
 const sideSlotAdClass = '.side-slot';
 const trackingPixel = 'img.tracking-pixel';
+const autoplayButtonSelector = "div.upnext-control div.switch input[type='checkbox']";
+
+//Extra option to force Autoplay on/off if user wants to set this manually in the script so the setting can work in private browsing modes as well. You will have to edit this value again whenever a script update is pushed though.
+const autoplayForcedOnOff = null; //Replace 'null' with 'true' or 'false' depending on how you want Autoplay to always behave.
 
 (function()
 {
     var url = window.location.href;
     isAdultSite = url.includes("redgifs.");
 
-    if (url.includes(thumbsStr))
+    if (url.includes(thumbsSubDomain))
     {
         setHDURL(url);
     }
@@ -50,21 +55,22 @@ const trackingPixel = 'img.tracking-pixel';
     }
     else
     {
-        waitForKeyElements(settingsButtonClass, changeSettings);
+        waitForKeyElements(settingsButtonClass, changeQualitySettings);
         waitForKeyElements(proUpgradeClass, hideElem);
         waitForKeyElements(proUpgradeNotificationClass, hideElem);
         //Delete the third-party advertisements in case adblockers aren't able to catch them.
         waitForKeyElements(topSlotAdClass, hideElem);
         waitForKeyElements(sideSlotAdClass, hideElem);
+		if(autoplayForcedOnOff !== null) { waitForKeyElements(autoplayButtonSelector, setAutoplayState); }
     }
 })();
 
 function setHDURL(url)
 {
-    url = url.replace(thumbsStr, giantStr);
-    if(url.includes(mobileStr))
+    url = url.replace(thumbsSubDomain, thumbsSubDomain);
+    if(url.includes(mobileAffix))
     {
-        url = url.replace(mobileStr, '.');
+        url = url.replace(mobileAffix, '.');
     }
     window.location = url;
 };
@@ -77,7 +83,7 @@ function removeMobileQualityVideos(video)
 
     for(let i = sources.length - 1; i >= 0; i--)
     {
-        if(sources[i].src.includes(mobileStr)) { sources[i].remove(); }
+        if(sources[i].src.includes(mobileAffix)) { sources[i].remove(); }
     }
 
     video.load();
@@ -93,15 +99,11 @@ function removeTracker(tracker)
     if(tracker != null) { tracker.remove(); }
 };
 
-function changeSettings(settingsButton)
+function changeQualitySettings(settingsButton)
 {
     if(settingsButton)
     {
-        //In case some webpage uses same class name for something, check for data-tooltip to reduce any chance of false positive
-        if(settingsButton.attr("data-tooltip") === "Quality")
-        {
-            settingsButton.click();
-        }
+		settingsButton.parent().click();
     }
     waitForKeyElements(progressControlClass, customizeProgressBar, true);
 };
@@ -124,6 +126,14 @@ function customizeProgressBar(progressBar)
         }
         progressBar.find('.progress-knob').attr('style', "margin-top: 0.6em;");
     }
+};
+
+function setAutoplayState(autoplayButton)
+{
+	if(autoplayButton !== null && autoplayButton[0].hasAttribute('checked') != autoplayForcedOnOff)
+	{
+        autoplayButton.click();
+	}
 };
 
 //Had to directly include waitForKeyElements.js since Greasyfork hasn't approved the include...
