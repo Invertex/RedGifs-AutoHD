@@ -7,7 +7,7 @@
 // @license GPL-3.0-or-later; http://www.gnu.org/licenses/gpl-3.0.txt
 // @homepageURL https://github.com/Invertex/Gfycat-AutoHD
 // @supportURL https://github.com/Invertex/Gfycat-AutoHD
-// @version 1.6
+// @version 1.62
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.gfycat.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
@@ -18,10 +18,14 @@
 // @connect *.gifdeliverynetwork.com
 // @connect *.cdn.embedly.com
 // @grant   GM.xmlHttpRequest
+// @grant GM_setValue
+// @grant GM_getValue
+// @grant GM_addValueChangeListener
 // @run-at document-idle
 
 // ==/UserScript==
 var isAdultSite;
+
 const thumbsSubDomain = '//thumbs.';
 const redgCDN = '//thcf';
 const hdSubDomain = '//giant.';
@@ -30,13 +34,28 @@ const gifAffix = '-size_restricted.';
 const iframeVideoClass = 'video.media,video.video';
 const settingsButtonClass = 'span.settings-button';
 const progressControlClass = '.progress-control';
-const trackingPixel = 'img.tracking-pixel';
 const autoplayButtonSelector = "div.upnext-control div.switch input[type='checkbox']";
 const modifiedAttr = "gfyHD";
 //Extra option to force "Autoplay Related GIFs" on/off if user wants to set this manually in the script so the setting can work in private browsing modes as well. You will have to edit this value again whenever a script update is pushed though.
 const autoplayForcedMode = null; //Replace 'null' with "on" or "off" depending on how you want Autoplay to always behave. Include the quotation marks "" !
 //Hide advertisement stuff
 addGlobalStyle('.pro-cta, .toast-notification--pro-cta, .top-slot, .side-slot, .signup-call-to-action, .adsbyexoclick-wrapper, .trafficstars_ad { display: none !important; }');
+
+/** Global audio on/off enforcement Start**/
+var audioEnabled = false;
+const audioEnabledKey = "gfyHD_audioEnabled";
+
+async function isAudioEnabled()
+{
+    return await GM_getValue(audioEnabledKey, false);
+}
+async function setAudioEnabled(enabled)
+{
+    return await GM_setValue(audioEnabledKey, enabled);
+}
+
+GM_addValueChangeListener(audioEnabledKey, (name, oldValue, newValue, remote) => { audioEnabled = newValue; });
+/** Global audio on/off enforcement End**/
 
 (async function()
 {
@@ -48,6 +67,8 @@ addGlobalStyle('.pro-cta, .toast-notification--pro-cta, .top-slot, .side-slot, .
         setHDURL(url);
         return;
     }
+
+    audioEnabled = await isAudioEnabled();
 
     const root = await awaitElem(document.body, '#root > div');
 
@@ -103,6 +124,7 @@ async function processMain(main)
     {
         console.log("found vid wrapper");
         await processVideo(mainVideoWrapper);
+        watchForChange(mainVideoWrapper.parentElement, {childList: true, subtree: false, attributes: false}, (wrapperParent, mutation) => { processVideo(mainVideoWrapper); });
         if(autoplayForcedMode !== null) { awaitElem(scrollFeed.parentElement, autoplayButtonSelector).then(setAutoplayState); }
     }
 
@@ -132,10 +154,40 @@ async function processVideo(vidWrapper)
     let video = await awaitElem(container, 'VIDEO', {childList: true, subtree: false, attributes: false});
     let src = await awaitElem(video, 'SOURCE', {childList: true, subtree: true, attributes: true});
     let sources = video.getElementsByTagName("SOURCE");
-    removeMobileQualityVideos(vidWrapper, video);
+
+    await removeMobileQualityVideos(vidWrapper, video);
     awaitElem(container, progressControlClass).then(customizeProgressBar);
+
+    modifySoundControl(container);
     //Website clears out all sub elements when you scroll far enough away, have to detect this change to process that element again since it won't show up in the main list mutations.
     watchForChange(vidWrapper, {childList: true, subtree: false, attributes: false}, (vw, mutation) => { processVideo(vw); });
+}
+
+async function modifySoundControl(playerContainer)
+{
+    const soundBtnUnmuted = function(sndBtn)
+    {
+        return sndBtn.getAttribute('data-tooltip') != "Unmute" || !sndBtn.className.includes('muted');
+    };
+
+    const setupSoundButtonListener = function(sndBtn)
+    {
+        if(!addHasModifiedClass(sndBtn))
+        {
+            sndBtn.addEventListener('click', (e) =>
+            {
+                setAudioEnabled(!soundBtnUnmuted(sndBtn));
+            });
+        }
+    };
+
+    const playerBottom = await awaitElem(playerContainer, '.player-bottom');
+    const sndBtn1 = await awaitElem(playerBottom, '.sound-control');
+    const sndBtn2 = await awaitElem(playerContainer, ':scope > .sound-control');
+
+    if(soundBtnUnmuted(sndBtn2) != audioEnabled) { sndBtn2.click(); }
+    setupSoundButtonListener(sndBtn1);
+    setupSoundButtonListener(sndBtn2);
 }
 
 function setHDURL(url)
@@ -192,11 +244,10 @@ async function changeQualitySettings(settingsButton)
 {
     if(settingsButton && settingsButton.innerText != "HD")
     {
-        console.log("click set button");
-        console.log(settingsButton);
         settingsButton.click();
     }
 };
+
 
 async function isResourceAvailable(url)
 {
@@ -223,7 +274,6 @@ async function isResourceAvailable(url)
 
 async function removeMobileQualityVideos(container, video)
 {
-    //For some reason video returns null sometimes... but this will work
     if(video == null)
     {
         console.log("alternate vid locate method");
@@ -235,19 +285,8 @@ async function removeMobileQualityVideos(container, video)
     await changeQualitySettings(settingsButton);
 };
 
-function removeUglyHostedByText(hostedTextElem)
-{
-    if(hostedTextElem != null) { hostedTextElem.remove(); }
-};
-
-function removeTracker(tracker)
-{
-    if(tracker != null) { tracker.remove(); }
-};
-
 function hideElem(elem)
 {
-    //  if(elem) { $(elem).hide(); }
     if(elem && !addHasModifiedClass(elem))
     {
         elem.style.display = "none";
