@@ -7,87 +7,232 @@
 // @license GPL-3.0-or-later; http://www.gnu.org/licenses/gpl-3.0.txt
 // @homepageURL https://github.com/Invertex/Gfycat-AutoHD
 // @supportURL https://github.com/Invertex/Gfycat-AutoHD
-// @version 1.57
+// @version 1.6
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.gfycat.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
 // @match *://*.gfycat.com/*
 // @match *://*.redgifs.com/*
-// @require https://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js
-// @grant none
-// @run-at document-start
+// @connect *.redgifs.com
+// @connect *.gfycat.com
+// @connect *.gifdeliverynetwork.com
+// @connect *.cdn.embedly.com
+// @grant   GM.xmlHttpRequest
+// @run-at document-idle
 
 // ==/UserScript==
 var isAdultSite;
 const thumbsSubDomain = '//thumbs.';
+const redgCDN = '//thcf';
 const hdSubDomain = '//giant.';
 const mobileAffix = '-mobile.';
-const iframeVideoClass = 'video.media';
-const settingsButtonClass = 'span.settings-button div.quality';
+const gifAffix = '-size_restricted.';
+const iframeVideoClass = 'video.media,video.video';
+const settingsButtonClass = 'span.settings-button';
 const progressControlClass = '.progress-control';
-const proUpgradeClass = '.pro-cta';
-const proUpgradeNotificationClass = '.toast-notification--pro-cta';
-const topSlotAdClass = '.top-slot';
-const sideSlotAdClass = '.side-slot';
 const trackingPixel = 'img.tracking-pixel';
-const annoyingSignupSelector = 'div.signup-call-to-action';
 const autoplayButtonSelector = "div.upnext-control div.switch input[type='checkbox']";
+const modifiedAttr = "gfyHD";
+//Extra option to force "Autoplay Related GIFs" on/off if user wants to set this manually in the script so the setting can work in private browsing modes as well. You will have to edit this value again whenever a script update is pushed though.
+const autoplayForcedMode = null; //Replace 'null' with "on" or "off" depending on how you want Autoplay to always behave. Include the quotation marks "" !
+//Hide advertisement stuff
+addGlobalStyle('.pro-cta, .toast-notification--pro-cta, .top-slot, .side-slot, .signup-call-to-action, .adsbyexoclick-wrapper, .trafficstars_ad { display: none !important; }');
 
-//Extra option to force Autoplay on/off if user wants to set this manually in the script so the setting can work in private browsing modes as well. You will have to edit this value again whenever a script update is pushed though.
-const autoplayForcedOnOff = null; //Replace 'null' with 'true' or 'false' depending on how you want Autoplay to always behave.
-
-(function()
+(async function()
 {
     var url = window.location.href;
     isAdultSite = url.includes("redgifs.");
 
-    if (url.includes(thumbsSubDomain))
+    if (url.includes(thumbsSubDomain) || url.includes(redgCDN))
     {
         setHDURL(url);
+        return;
     }
-    else if(url.includes('embedly') || url.includes('gifdeliverynetwork'))
+
+    const root = await awaitElem(document.body, '#root > div');
+
+    if(!addHasModifiedClass(root))
     {
-        waitForKeyElements(iframeVideoClass, removeMobileQualityVideos);
-        waitForKeyElements('span.hosted-by-text', removeUglyHostedByText);
-        waitForKeyElements(progressControlClass, customizeProgressBar, true);
-        //C'mon gfycat, don't be doing that cross-site tracking
-        waitForKeyElements(trackingPixel, removeTracker);
-    }
-    else
-    {
-        waitForKeyElements(settingsButtonClass, changeQualitySettings);
-        waitForKeyElements(proUpgradeClass, hideElem);
-        waitForKeyElements(proUpgradeNotificationClass, hideElem);
-        //Delete the third-party advertisements in case adblockers aren't able to catch them.
-        waitForKeyElements(topSlotAdClass, hideElem);
-        waitForKeyElements(sideSlotAdClass, hideElem);
-        waitForKeyElements(annoyingSignupSelector, hideElem);
-		if(autoplayForcedOnOff !== null) { waitForKeyElements(autoplayButtonSelector, setAutoplayState); }
+        if(url.includes('embedly') || url.includes('gifdeliverynetwork') || url.includes('/ifr/'))
+        {//Embeds like on Reddit.
+            processEmbed(root);
+        }
+        else
+        {
+            processMainSite(root);
+        }
     }
 })();
+
+async function processEmbed(root)
+{
+     const processRoot = async function(root)
+    {
+        awaitElem(root, 'div.iframe-player-container').then(processVideo);
+    };
+    processRoot(root);
+    watchForChange(root, {childList: true, subtree: false, attributes: false}, (rootChanged, mutation) => { processRoot(rootChanged); });
+}
+
+async function processMainSite(root)
+{
+    console.log("is main site");
+
+    const processRoot = async function(root)
+    {
+        const main = await awaitElem(root, 'main');
+        if(!addHasModifiedClass(main))
+        {
+            processMain(main);
+            watchForChange(main, {childList: true, subtree: false, attributes: false}, (main, mutation) => { processMain(main); });
+        }
+    };
+
+    processRoot(root);
+    watchForChange(root, {childList: true, subtree: false, attributes: false}, (rootChanged, mutation) => { processRoot(rootChanged); });
+}
+
+async function processMain(main)
+{
+    console.log("process main");
+
+    const mainVideoWrapper = await awaitElem(main, 'div.video-player-wrapper', {childList: true, subtree: true, attributes: false});
+    const scrollFeed = await awaitElem(main, 'div.block-2 > div:not(.first-row)');
+
+    if(!addHasModifiedClass(mainVideoWrapper.parentElement))
+    {
+        console.log("found vid wrapper");
+        await processVideo(mainVideoWrapper);
+        if(autoplayForcedMode !== null) { awaitElem(scrollFeed.parentElement, autoplayButtonSelector).then(setAutoplayState); }
+    }
+
+    processVideoList(scrollFeed.querySelectorAll('.gif-feed-card > .content-sizer'));
+    watchForChange(scrollFeed, {childList: true, subtree: false, attributes: false}, (feed, mutation) => { processVideoList(mutation.addedNodes); });
+}
+
+function setAutoplayState(autoplayButton)
+{
+    let forcedMode = (autoplayForcedMode || autoplayForcedMode == "on") ? true : false;
+
+	if(autoplayButton != null && autoplayButton.checked != forcedMode)
+	{
+        autoplayButton.click();
+	}
+};
+
+async function processVideoList(vids)
+{
+    vids.forEach(processVideo);
+}
+
+async function processVideo(vidWrapper)
+{
+    let container = await awaitElem(vidWrapper, '.player-container');
+    if(addHasModifiedClass(container)) { return; }
+    let video = await awaitElem(container, 'VIDEO', {childList: true, subtree: false, attributes: false});
+    let src = await awaitElem(video, 'SOURCE', {childList: true, subtree: true, attributes: true});
+    let sources = video.getElementsByTagName("SOURCE");
+    removeMobileQualityVideos(vidWrapper, video);
+    awaitElem(container, progressControlClass).then(customizeProgressBar);
+    //Website clears out all sub elements when you scroll far enough away, have to detect this change to process that element again since it won't show up in the main list mutations.
+    watchForChange(vidWrapper, {childList: true, subtree: false, attributes: false}, (vw, mutation) => { processVideo(vw); });
+}
 
 function setHDURL(url)
 {
     url = url.replace(thumbsSubDomain, hdSubDomain);
-    if(url.includes(mobileAffix))
+    if(url.includes(mobileAffix)) { url = url.replace(mobileAffix, '.'); }
+    if(url == window.location.href)
     {
-        url = url.replace(mobileAffix, '.');
+        checkForVideoConnection(
+            url,
+            () =>
+            {
+                switchToFastServer(
+                    url,
+                    0,
+                    (newUrl) => { window.location = newUrl; }
+                );
+            },
+            () => { return; }
+        );
     }
-    window.location = url;
+    else { switchToFastServer(url, 0, function(newUrl){ window.location = newUrl;}); }
 };
 
-function removeMobileQualityVideos(video)
+async function switchToFastServer(src, serverIndex, onFinish)
 {
-    //For some reason video returns null... but this will work
-    video = document.querySelector(iframeVideoClass);
-    let sources = video.getElementsByTagName("SOURCE");
+    let url = cycleCDN(src, serverIndex);
+    if(serverIndex >= 9 || url == "") { onFinish(src); }
+}
 
-    for(let i = sources.length - 1; i >= 0; i--)
-    {
-        if(sources[i].src.includes(mobileAffix)) { sources[i].remove(); }
+function cycleCDN(url, serverIndex)
+{
+    function setCharAt(str,index,chr) {
+        if(index > str.length-1) return str;
+        return str.substring(0,index) + chr + str.substring(index+1);
     }
 
-    video.load();
+    let cdnSubstr = url.indexOf('thcf');
+    if(cdnSubstr > 2) cdnSubstr += 4;
+    else return "";
+
+    return setCharAt(url, cdnSubstr, serverIndex + 1);
+}
+
+async function checkForVideoConnection(url, onFail, onSuccess)
+{
+    return;
+    let isAvailable = await isResourceAvailable(url);
+    if(isAvailable) { onSuccess(url); }
+    else { onFail(); }
+}
+
+async function changeQualitySettings(settingsButton)
+{
+    if(settingsButton && settingsButton.innerText != "HD")
+    {
+        console.log("click set button");
+        console.log(settingsButton);
+        settingsButton.click();
+    }
+};
+
+async function isResourceAvailable(url)
+{
+    function gmGet(args) {
+        return new Promise((resolve, reject) => {
+            GM.xmlHttpRequest(
+                Object.assign({
+                    method: 'HEAD',
+                }, args.url ? args : {url: args}, {
+                    onload: e => resolve(e.status),
+                    onerror: reject,
+                    ontimeout: reject
+                })
+            );
+        });
+    }
+
+    let a = 404;
+
+    try { a = await gmGet(url); } catch(e){ }
+    console.log(a);
+    return a == 200;
+}
+
+async function removeMobileQualityVideos(container, video)
+{
+    //For some reason video returns null sometimes... but this will work
+    if(video == null)
+    {
+        console.log("alternate vid locate method");
+        video = container.querySelector(iframeVideoClass);
+    }
+
+    if(video == null) { console.log("no vid"); return; }
+    let settingsButton = container.querySelector('div.right > span.settings-button > .quality');
+    await changeQualitySettings(settingsButton);
 };
 
 function removeUglyHostedByText(hostedTextElem)
@@ -100,97 +245,110 @@ function removeTracker(tracker)
     if(tracker != null) { tracker.remove(); }
 };
 
-function changeQualitySettings(settingsButton)
-{
-    if(settingsButton)
-    {
-		settingsButton.parent().click();
-    }
-    waitForKeyElements(progressControlClass, customizeProgressBar, true);
-};
-
 function hideElem(elem)
 {
-    if(elem) { elem.hide(); }
+    //  if(elem) { $(elem).hide(); }
+    if(elem && !addHasModifiedClass(elem))
+    {
+        elem.style.display = "none";
+        //Gfycat recreates the same element multiple times sometimes
+        watchForChange(elem, { childList: false, subtree: false, attributes: true}, hideElem(elem));
+    }
 };
 
-function customizeProgressBar(progressBar)
+async function customizeProgressBar(progressBar)
 {
     if(progressBar)
     {
-        if(isAdultSite) { progressBar.attr('style', "height:2.4mm;"); }
+        if(isAdultSite) { progressBar.setAttribute('style', "height:2.4mm;"); }
         else
         {
-            progressBar.attr('style', "height:2.4mm; background-color: hsla(0,0%,100%,.1);");
-            progressBar.find('.hover-progress').attr('style', "background-color: hsla(0,0%,100%,.2);");
-            progressBar.find('.play-progress').attr('style', "background-image: linear-gradient(90deg,rgba(58,168,255,0.3),rgba(36,117,255,0.3));");
+            progressBar.setAttribute('style', "height:2.4mm; background-color: hsla(0,0%,100%,.1);");
+            progressBar.querySelector('.hover-progress').setAttribute('style', "background-color: hsla(0,0%,100%,.2);");
+            progressBar.querySelector('.play-progress').setAttribute('style', "background-image: linear-gradient(90deg,rgba(58,168,255,0.3),rgba(36,117,255,0.3));");
         }
-        progressBar.find('.progress-knob').attr('style', "margin-top: 0.6em;");
+        progressBar.querySelector('.progress-knob').setAttribute('style', "margin-top: 0.6em;");
     }
 };
 
-function setAutoplayState(autoplayButton)
+function addHasModifiedClass(elem)
 {
-	if(autoplayButton !== null && autoplayButton[0].hasAttribute('checked') != autoplayForcedOnOff)
-	{
-        autoplayButton.click();
-	}
-};
+    if(elem.className.includes(modifiedAttr)) { return true; }
+    else if(elem.className == '') { elem.className = modifiedAttr; }
+    else { elem.className +=" " + modifiedAttr; }
 
-//Had to directly include waitForKeyElements.js since Greasyfork hasn't approved the include...
-//Following function by https://gist.github.com/BrockA
-function waitForKeyElements (
-    selectorTxt,    /* Required: The jQuery selector string that specifies the desired element(s). */
-    actionFunction, /* Required: The code to run when elements are found. It is passed a jNode to the matched element. */
-    bWaitOnce,      /* Optional: If false, will continue to scan for new elements even after the first match is found. */
-    iframeSelector  /* Optional: If set, identifies the iframe to search. */
-) {
-    var targetNodes, btargetsFound;
+    return false;
+}
 
-    if (typeof iframeSelector == "undefined")
-        targetNodes = $(selectorTxt);
-    else
-        targetNodes = $(iframeSelector).contents().find (selectorTxt);
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
-    if (targetNodes && targetNodes.length > 0)
+async function awaitElem(root, query, mutationArgs = {childList: true, subtree: true, attributes: false})
+{
+    const findElem = (rootElem, query, observer, resolve) =>
     {
-        btargetsFound = true;
-        /*--- Found target node(s).  Go through each and act if they
-            are new.
-        */
-        targetNodes.each( function()
+        const elem = rootElem.querySelector(query);
+        if(elem != null)
         {
-            var jThis        = $(this);
-            var alreadyFound = jThis.data ('alreadyFound') || false;
-
-            if (!alreadyFound)
-            {
-                //--- Call the payload function.
-                var cancelFound = actionFunction (jThis);
-                if (cancelFound) { btargetsFound = false; }
-                else { jThis.data ('alreadyFound', true); }
-            }
-        } );
-    }
-    else { btargetsFound = false; }
-
-    //--- Get the timer-control variable for this selector.
-    var controlObj      = waitForKeyElements.controlObj  ||  {};
-    var controlKey      = selectorTxt.replace (/[^\w]/g, "_");
-    var timeControl     = controlObj [controlKey];
-
-    //--- Now set or clear the timer as appropriate.
-    if (btargetsFound && bWaitOnce && timeControl) {
-        //--- The only condition where we need to clear the timer.
-        clearInterval (timeControl);
-        delete controlObj [controlKey]
-    }
-    else {
-        //--- Set a timer, if needed.
-        if ( ! timeControl) {
-            timeControl = setInterval (function(){ waitForKeyElements(selectorTxt, actionFunction, bWaitOnce, iframeSelector); }, 300);
-            controlObj [controlKey] = timeControl;
+            observer?.disconnect();
+            resolve(elem);
+            return true;
         }
+        return false;
+    };
+
+    return new Promise((resolve, reject) =>
+    {
+        if(findElem(root, query, null, resolve)) { return; }
+
+        const rootObserver = new MutationObserver((mutes, obs) =>
+        {
+            findElem(root, query, rootObserver, resolve);
+        });
+        rootObserver.observe(root, mutationArgs);
+    });
+}
+
+function watchForChange(root, obsArguments, onChange)
+{
+    const rootObserver = new MutationObserver(function(mutations) {
+        mutations.forEach((mutation) => onChange(root, mutation));
+    });
+    rootObserver.observe(root, obsArguments);
+    return rootObserver;
+}
+
+async function watchForElem(root, query, stopAfterFinding, obsArguments, executeAfter)
+{
+    let elem = root.querySelector(query);
+    if(elem != null && elem != undefined)
+    {
+        executeAfter(elem);
+        if(stopAfterFinding === true) { return; }
     }
-    waitForKeyElements.controlObj = controlObj;
+
+    let rootObserver = new MutationObserver(
+        function(mutations)
+        {
+            elem = root.querySelector(query);
+            if(elem != null && elem != undefined)
+            {
+                if(stopAfterFinding === true) { rootObserver.disconnect(); }
+
+                executeAfter(elem);
+            }
+        });
+
+    rootObserver.observe(root, obsArguments);
+}
+
+function addGlobalStyle(css) {
+    let head, style;
+    head = document.getElementsByTagName('head')[0];
+    if (!head) { return; }
+    style = document.createElement('style');
+    style.type = 'text/css';
+    style.innerHTML = css;
+    head.appendChild(style);
 }
