@@ -7,7 +7,7 @@
 // @license GPL-3.0-or-later; http://www.gnu.org/licenses/gpl-3.0.txt
 // @homepageURL https://github.com/Invertex/Gfycat-AutoHD
 // @supportURL https://github.com/Invertex/Gfycat-AutoHD
-// @version 1.64
+// @version 1.65
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.gfycat.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
@@ -48,7 +48,7 @@ var audioEnabled = false;
 const audioEnabledKey = "gfyHD_audioEnabled";
 
 //Sadly Greasemonkey does not have this functionality... Tampermonkey really is superior.
-var isGM = (typeof GM_addValueChangeListener === 'undefined');
+const isGM = (typeof GM_addValueChangeListener === 'undefined');
 
 async function isAudioEnabled()
 {
@@ -192,7 +192,7 @@ async function modifySoundControl(playerContainer)
     const playerBottom = await awaitElem(playerContainer, '.player-bottom');
     const sndBtn1 = await awaitElem(playerBottom, '.sound-control');
     const sndBtn2 = await awaitElem(playerContainer, ':scope > .sound-control');
-
+	if(isGM) { audioEnabled = await isAudioEnabled(); }
     if(soundBtnUnmuted(sndBtn2) != audioEnabled) { sndBtn2.click();}
     setupSoundButtonListener(sndBtn1);
     setupSoundButtonListener(sndBtn2);
