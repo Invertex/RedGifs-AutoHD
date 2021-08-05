@@ -7,7 +7,7 @@
 // @license GPL-3.0-or-later; http://www.gnu.org/licenses/gpl-3.0.txt
 // @homepageURL https://github.com/Invertex/Gfycat-AutoHD
 // @supportURL https://github.com/Invertex/Gfycat-AutoHD
-// @version 1.62
+// @version 1.64
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.gfycat.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
@@ -17,9 +17,11 @@
 // @connect *.gfycat.com
 // @connect *.gifdeliverynetwork.com
 // @connect *.cdn.embedly.com
-// @grant   GM.xmlHttpRequest
+// @grant GM.xmlHttpRequest
 // @grant GM_setValue
 // @grant GM_getValue
+// @grant GM.setValue
+// @grant GM.getValue
 // @grant GM_addValueChangeListener
 // @run-at document-idle
 
@@ -45,16 +47,25 @@ addGlobalStyle('.pro-cta, .toast-notification--pro-cta, .top-slot, .side-slot, .
 var audioEnabled = false;
 const audioEnabledKey = "gfyHD_audioEnabled";
 
+//Sadly Greasemonkey does not have this functionality... Tampermonkey really is superior.
+var isGM = (typeof GM_addValueChangeListener === 'undefined');
+
 async function isAudioEnabled()
 {
-    return await GM_getValue(audioEnabledKey, false);
+  if(isGM) { return await GM.getValue(audioEnabledKey, false); }
+  return await GM_getValue(audioEnabledKey, false);
 }
 async function setAudioEnabled(enabled)
 {
-    return await GM_setValue(audioEnabledKey, enabled);
+  if(isGM) { return await GM.setValue(audioEnabledKey, enabled); }
+	return await GM_setValue(audioEnabledKey, enabled);
 }
 
-GM_addValueChangeListener(audioEnabledKey, (name, oldValue, newValue, remote) => { audioEnabled = newValue; });
+if (!isGM)
+{
+	GM_addValueChangeListener(audioEnabledKey, (name, oldValue, newValue, remote) => { audioEnabled = newValue; });
+}
+
 /** Global audio on/off enforcement End**/
 
 (async function()
@@ -97,8 +108,6 @@ async function processEmbed(root)
 
 async function processMainSite(root)
 {
-    console.log("is main site");
-
     const processRoot = async function(root)
     {
         const main = await awaitElem(root, 'main');
@@ -115,14 +124,11 @@ async function processMainSite(root)
 
 async function processMain(main)
 {
-    console.log("process main");
-
     const mainVideoWrapper = await awaitElem(main, 'div.video-player-wrapper', {childList: true, subtree: true, attributes: false});
     const scrollFeed = await awaitElem(main, 'div.block-2 > div:not(.first-row)');
 
     if(!addHasModifiedClass(mainVideoWrapper.parentElement))
     {
-        console.log("found vid wrapper");
         await processVideo(mainVideoWrapper);
         watchForChange(mainVideoWrapper.parentElement, {childList: true, subtree: false, attributes: false}, (wrapperParent, mutation) => { processVideo(mainVideoWrapper); });
         if(autoplayForcedMode !== null) { awaitElem(scrollFeed.parentElement, autoplayButtonSelector).then(setAutoplayState); }
@@ -144,6 +150,7 @@ function setAutoplayState(autoplayButton)
 
 async function processVideoList(vids)
 {
+  //  console.log(`processing vids: ${vids.length}`);
     vids.forEach(processVideo);
 }
 
@@ -159,6 +166,7 @@ async function processVideo(vidWrapper)
     awaitElem(container, progressControlClass).then(customizeProgressBar);
 
     modifySoundControl(container);
+	
     //Website clears out all sub elements when you scroll far enough away, have to detect this change to process that element again since it won't show up in the main list mutations.
     watchForChange(vidWrapper, {childList: true, subtree: false, attributes: false}, (vw, mutation) => { processVideo(vw); });
 }
@@ -185,7 +193,7 @@ async function modifySoundControl(playerContainer)
     const sndBtn1 = await awaitElem(playerBottom, '.sound-control');
     const sndBtn2 = await awaitElem(playerContainer, ':scope > .sound-control');
 
-    if(soundBtnUnmuted(sndBtn2) != audioEnabled) { sndBtn2.click(); }
+    if(soundBtnUnmuted(sndBtn2) != audioEnabled) { sndBtn2.click();}
     setupSoundButtonListener(sndBtn1);
     setupSoundButtonListener(sndBtn2);
 }
@@ -268,7 +276,7 @@ async function isResourceAvailable(url)
     let a = 404;
 
     try { a = await gmGet(url); } catch(e){ }
-    console.log(a);
+
     return a == 200;
 }
 
