@@ -7,7 +7,7 @@
 // @license GPL-3.0-or-later; http://www.gnu.org/licenses/gpl-3.0.txt
 // @homepageURL https://github.com/Invertex/Gfycat-AutoHD
 // @supportURL https://github.com/Invertex/Gfycat-AutoHD
-// @version 1.67
+// @version 1.69
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.gfycat.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
@@ -41,7 +41,7 @@ const modifiedAttr = "gfyHD";
 //Extra option to force "Autoplay Related GIFs" on/off if user wants to set this manually in the script so the setting can work in private browsing modes as well. You will have to edit this value again whenever a script update is pushed though.
 const autoplayForcedMode = null; //Replace 'null' with "on" or "off" depending on how you want Autoplay to always behave. Include the quotation marks "" !
 //Hide advertisement stuff
-addGlobalStyle('.pro-cta, .toast-notification--pro-cta, .placard-wrapper, .top-slot, .side-slot, .signup-call-to-action, .adsbyexoclick-wrapper, .trafficstars_ad { display: none !important; }');
+addGlobalStyle('.pro-cta, .toast-notification--pro-cta, .placard-wrapper, .top-slot, .side-slot, .signup-call-to-action, .adsbyexoclick-wrapper, .trafficstars_ad, #fpa_layer { display: none !important; }');
 
 /** Global audio on/off enforcement Start**/
 var audioEnabled = false;
