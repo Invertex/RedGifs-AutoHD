@@ -7,7 +7,7 @@
 // @license GPL-3.0-or-later; http://www.gnu.org/licenses/gpl-3.0.txt
 // @homepageURL https://github.com/Invertex/Gfycat-AutoHD
 // @supportURL https://github.com/Invertex/Gfycat-AutoHD
-// @version 1.69
+// @version 1.72
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.gfycat.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
@@ -81,7 +81,7 @@ if (!isGM)
 
     audioEnabled = await isAudioEnabled();
 
-    const root = await awaitElem(document.body, '#root > div');
+    const root = await awaitElem(document.body, '#root > div, #app');
 
     if(!addHasModifiedClass(root))
     {
@@ -100,7 +100,7 @@ async function processEmbed(root)
 {
      const processRoot = async function(root)
     {
-        awaitElem(root, 'div.iframe-player-container').then(processVideo);
+        awaitElem(root, 'div.player-wrapper, div.iframe-player-container').then(processVideo);
     };
     processRoot(root);
     watchForChange(root, {childList: true, subtree: false, attributes: false}, (rootChanged, mutation) => { processRoot(rootChanged); });
@@ -110,7 +110,7 @@ async function processMainSite(root)
 {
     const processRoot = async function(root)
     {
-        const main = await awaitElem(root, 'main');
+        const main = await awaitElem(root, 'main, .content-page');
         if(!addHasModifiedClass(main))
         {
             processMain(main);
@@ -124,8 +124,8 @@ async function processMainSite(root)
 
 async function processMain(main)
 {
-    const mainVideoWrapper = await awaitElem(main, 'div.video-player-wrapper', {childList: true, subtree: true, attributes: false});
-    const scrollFeed = await awaitElem(main, 'div.block-2 > div:not(.first-row)');
+    const mainVideoWrapper = await awaitElem(main, 'div.video-player-wrapper, div.player', {childList: true, subtree: true, attributes: false});
+    const scrollFeed = await awaitElem(main.parentElement, '.related-feed .content-wrapper, div.block-2 > div:not(.first-row), div.related-feed div.content-wrapper');
 
     if(!addHasModifiedClass(mainVideoWrapper.parentElement))
     {
@@ -134,7 +134,7 @@ async function processMain(main)
         if(autoplayForcedMode !== null) { awaitElem(scrollFeed.parentElement, autoplayButtonSelector).then(setAutoplayState); }
     }
 
-    processVideoList(scrollFeed.querySelectorAll('.gif-feed-card > .content-sizer'));
+    processVideoList(scrollFeed.querySelectorAll('.player-wrapper > .player, .gif-feed-card > .content-sizer'));
     watchForChange(scrollFeed, {childList: true, subtree: false, attributes: false}, (feed, mutation) => { processVideoList(mutation.addedNodes); });
 }
 
@@ -159,17 +159,17 @@ async function processVideo(vidWrapper)
     {//Advert slot, skip
         return;
     }
-    let container = await awaitElem(vidWrapper, '.player-container');
+    let container = await awaitElem(vidWrapper, '.player-container, .player-body');
     if(addHasModifiedClass(container)) { return; }
+
     let video = await awaitElem(container, 'VIDEO', {childList: true, subtree: false, attributes: false});
     let src = await awaitElem(video, 'SOURCE', {childList: true, subtree: true, attributes: true});
     let sources = video.getElementsByTagName("SOURCE");
 
     await removeMobileQualityVideos(vidWrapper, video);
     awaitElem(container, progressControlClass).then(customizeProgressBar);
-
     modifySoundControl(container);
-	
+
     //Website clears out all sub elements when you scroll far enough away, have to detect this change to process that element again since it won't show up in the main list mutations.
     watchForChange(vidWrapper, {childList: true, subtree: false, attributes: false}, (vw, mutation) => { processVideo(vw); });
 }
@@ -292,7 +292,7 @@ async function removeMobileQualityVideos(container, video)
     }
 
     if(video == null) { console.log("no vid"); return; }
-    let settingsButton = container.querySelector('div.right > span.settings-button > .quality');
+    let settingsButton = container.querySelector('div.right > span.settings-button > .quality, div.options-buttons > .has-badge > .icon-badge');
     await changeQualitySettings(settingsButton);
 };
 
