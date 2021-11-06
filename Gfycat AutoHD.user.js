@@ -75,7 +75,6 @@ if (!isGM)
 
     if (url.includes(thumbsSubDomain) || url.includes(redgCDN))
     {
-        console.log("hd url");
         setHDURL(url);
         return;
     }
