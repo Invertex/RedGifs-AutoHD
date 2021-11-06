@@ -7,7 +7,7 @@
 // @license GPL-3.0-or-later; http://www.gnu.org/licenses/gpl-3.0.txt
 // @homepageURL https://github.com/Invertex/Gfycat-AutoHD
 // @supportURL https://github.com/Invertex/Gfycat-AutoHD
-// @version 1.72
+// @version 1.73
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.gfycat.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
@@ -75,6 +75,7 @@ if (!isGM)
 
     if (url.includes(thumbsSubDomain) || url.includes(redgCDN))
     {
+        console.log("hd url");
         setHDURL(url);
         return;
     }
@@ -166,7 +167,7 @@ async function processVideo(vidWrapper)
     let src = await awaitElem(video, 'SOURCE', {childList: true, subtree: true, attributes: true});
     let sources = video.getElementsByTagName("SOURCE");
 
-    await removeMobileQualityVideos(vidWrapper, video);
+    removeMobileQualityVideos(vidWrapper, video);
     awaitElem(container, progressControlClass).then(customizeProgressBar);
     modifySoundControl(container);
 
@@ -251,15 +252,6 @@ async function checkForVideoConnection(url, onFail, onSuccess)
     else { onFail(); }
 }
 
-async function changeQualitySettings(settingsButton)
-{
-    if(settingsButton && settingsButton.innerText != "HD")
-    {
-        settingsButton.click();
-    }
-};
-
-
 async function isResourceAvailable(url)
 {
     function gmGet(args) {
@@ -283,6 +275,14 @@ async function isResourceAvailable(url)
     return a == 200;
 }
 
+function changeQualitySettings(settingsButton, qualityIcon)
+{
+    if(settingsButton && qualityIcon && !qualityIcon.innerText.includes("HD"))
+    {
+        settingsButton.click();
+    }
+};
+
 async function removeMobileQualityVideos(container, video)
 {
     if(video == null)
@@ -292,8 +292,14 @@ async function removeMobileQualityVideos(container, video)
     }
 
     if(video == null) { console.log("no vid"); return; }
-    let settingsButton = container.querySelector('div.right > span.settings-button > .quality, div.options-buttons > .has-badge > .icon-badge');
-    await changeQualitySettings(settingsButton);
+
+    await sleep(140); //For some reason redgifs button clicking stops working if we do this change too soon...
+
+    let controls = container.querySelector('.player-controls');
+
+    let settingsButton = controls.querySelector('div.right > span.settings-button, div.options-buttons > .has-badge');
+    let qualityIcon = settingsButton.querySelector('.quality, .icon-badge');
+    changeQualitySettings(settingsButton, qualityIcon);
 };
 
 function hideElem(elem)
