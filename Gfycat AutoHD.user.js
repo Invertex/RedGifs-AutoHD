@@ -7,7 +7,7 @@
 // @license GPL-3.0-or-later; http://www.gnu.org/licenses/gpl-3.0.txt
 // @homepageURL https://github.com/Invertex/Gfycat-AutoHD
 // @supportURL https://github.com/Invertex/Gfycat-AutoHD
-// @version 1.75
+// @version 1.79
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.gfycat.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
@@ -294,13 +294,17 @@ async function removeMobileQualityVideos(container, video)
 
     let controls = container.querySelector('.player-controls');
     let playBtn = controls.querySelector('.play-buttons > button, span[data-tooltip="Play"]');
-    playBtn.click(); //Have to pause, change quality, wait and then unpause to avoid RedGifs button events becoming glitched
+    let isPlaying = playBtn.querySelector('span.icon-pause') != null;
+    if(isPlaying)
+    {
+        playBtn.click(); //Have to pause, change quality, wait and then unpause to avoid RedGifs button events becoming glitched
+    }
 
     let settingsButton = controls.querySelector('div.right > span.settings-button, div.options-buttons > .has-badge');
     let qualityIcon = settingsButton.querySelector('.quality, .icon-badge');
     changeQualitySettings(settingsButton, qualityIcon);
 
-    if(isAdultSite)
+    if(isPlaying && isAdultSite)
     {
         await sleep(200);
         playBtn.click();
