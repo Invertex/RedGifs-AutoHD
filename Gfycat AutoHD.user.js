@@ -7,7 +7,7 @@
 // @license GPL-3.0-or-later; http://www.gnu.org/licenses/gpl-3.0.txt
 // @homepageURL https://github.com/Invertex/Gfycat-AutoHD
 // @supportURL https://github.com/Invertex/Gfycat-AutoHD
-// @version 1.79
+// @version 1.80
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.gfycat.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
@@ -163,9 +163,6 @@ async function processVideo(vidWrapper)
     if(addHasModifiedClass(container)) { return; }
 
     let video = await awaitElem(container, 'VIDEO', {childList: true, subtree: false, attributes: false});
-    let src = await awaitElem(video, 'SOURCE', {childList: true, subtree: true, attributes: true});
-    let sources = video.getElementsByTagName("SOURCE");
-
     removeMobileQualityVideos(vidWrapper, video);
     awaitElem(container, progressControlClass).then(customizeProgressBar);
     modifySoundControl(container);
