@@ -41,7 +41,7 @@ const modifiedAttr = "gfyHD";
 //Extra option to force "Autoplay Related GIFs" on/off if user wants to set this manually in the script so the setting can work in private browsing modes as well. You will have to edit this value again whenever a script update is pushed though.
 const autoplayForcedMode = null; //Replace 'null' with "on" or "off" depending on how you want Autoplay to always behave. Include the quotation marks "" !
 //Hide advertisement stuff
-addGlobalStyle('.pro-cta, .toast-notification--pro-cta, .placard-wrapper, .top-slot, .side-slot, .signup-call-to-action, .adsbyexoclick-wrapper, .trafficstars_ad, #fpa_layer { display: none !important; }');
+addGlobalStyle('.pro-cta, .toast-notification--pro-cta, .placard-wrapper, .ad, .top-slot, .side-slot, .signup-call-to-action, .adsbyexoclick-wrapper, .trafficstars_ad, #fpa_layer { display: none !important; }');
 
 /** Global audio on/off enforcement Start**/
 var audioEnabled = false;
