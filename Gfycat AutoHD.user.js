@@ -7,7 +7,7 @@
 // @license GPL-3.0-or-later; http://www.gnu.org/licenses/gpl-3.0.txt
 // @homepageURL https://github.com/Invertex/Gfycat-AutoHD
 // @supportURL https://github.com/Invertex/Gfycat-AutoHD
-// @version 1.81
+// @version 1.82
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.gfycat.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
@@ -38,35 +38,35 @@ const settingsButtonClass = 'span.settings-button';
 const progressControlClass = '.progress-control';
 const autoplayButtonSelector = "div.upnext-control div.switch input[type='checkbox']";
 const modifiedAttr = "gfyHD";
-//Extra option to force "Autoplay Related GIFs" on/off if user wants to set this manually in the script so the setting can work in private browsing modes as well. You will have to edit this value again whenever a script update is pushed though.
-const autoplayForcedMode = null; //Replace 'null' with "on" or "off" depending on how you want Autoplay to always behave. Include the quotation marks "" !
 //Hide advertisement stuff
 addGlobalStyle('.pro-cta, .toast-notification--pro-cta, .placard-wrapper, .ad, .top-slot, .side-slot, .signup-call-to-action, .adsbyexoclick-wrapper, .trafficstars_ad, #fpa_layer { display: none !important; }');
 
-/** Global audio on/off enforcement Start**/
+/** Global persistence Start**/
+var autoplayEnabled = true;
+const autoplayEnabledKey = "gfyHD_autoplayEnabled";
+
 var audioEnabled = false;
 const audioEnabledKey = "gfyHD_audioEnabled";
 
 //Sadly Greasemonkey does not have this functionality... Tampermonkey really is superior.
 const isGM = (typeof GM_addValueChangeListener === 'undefined');
 
-async function isAudioEnabled()
+async function isEnabled(key, defaultValue)
 {
-  if(isGM) { return await GM.getValue(audioEnabledKey, false); }
-  return await GM_getValue(audioEnabledKey, false);
+  return isGM ? await GM.getValue(key, defaultValue) : GM_getValue(key, defaultValue);
 }
-async function setAudioEnabled(enabled)
+async function setEnabled(key, value)
 {
-  if(isGM) { return await GM.setValue(audioEnabledKey, enabled); }
-	return await GM_setValue(audioEnabledKey, enabled);
+  return isGM ? await GM.setValue(key, value) : GM_setValue(key, value);
 }
 
 if (!isGM)
 {
+    GM_addValueChangeListener(autoplayEnabledKey, (name, oldValue, newValue, remote) => { autoplayEnabled = newValue; });
 	GM_addValueChangeListener(audioEnabledKey, (name, oldValue, newValue, remote) => { audioEnabled = newValue; });
 }
 
-/** Global audio on/off enforcement End**/
+/** Global persistence End**/
 
 (async function()
 {
@@ -79,7 +79,7 @@ if (!isGM)
         return;
     }
 
-    audioEnabled = await isAudioEnabled();
+    audioEnabled = await isEnabled(audioEnabledKey, false);
 
     const root = await awaitElem(document.body, '#root > div, #app');
 
@@ -131,18 +131,20 @@ async function processMain(main)
     {
         await processVideo(mainVideoWrapper);
         watchForChange(mainVideoWrapper.parentElement, {childList: true, subtree: false, attributes: false}, (wrapperParent, mutation) => { processVideo(mainVideoWrapper); });
-        if(autoplayForcedMode !== null) { awaitElem(scrollFeed.parentElement, autoplayButtonSelector).then(setAutoplayState); }
+        const autoplayButton = await awaitElem(scrollFeed.parentElement, autoplayButtonSelector);
+        setAutoplayState(autoplayButton);
+        autoplayButton.addEventListener('change', (e) => { setEnabled(autoplayEnabledKey, e.target.checked) });
     }
 
     processVideoList(scrollFeed.querySelectorAll('.player-wrapper > .player, .gif-feed-card > .content-sizer'));
     watchForChange(scrollFeed, {childList: true, subtree: false, attributes: false}, (feed, mutation) => { processVideoList(mutation.addedNodes); });
 }
 
-function setAutoplayState(autoplayButton)
+async function setAutoplayState(autoplayButton)
 {
-    let forcedMode = (autoplayForcedMode || autoplayForcedMode == "on") ? true : false;
+    autoplayEnabled = await isEnabled(autoplayEnabledKey, true);
 
-	if(autoplayButton != null && autoplayButton.checked != forcedMode)
+	if(autoplayButton.checked != autoplayEnabled)
 	{
         autoplayButton.click();
 	}
@@ -184,7 +186,7 @@ async function modifySoundControl(playerContainer)
         {
             sndBtn.addEventListener('click', (e) =>
             {
-                setAudioEnabled(!soundBtnUnmuted(sndBtn));
+                setEnabled(audioEnabledKey, !soundBtnUnmuted(sndBtn));
             });
         }
     };
@@ -192,7 +194,7 @@ async function modifySoundControl(playerContainer)
     const playerBottom = await awaitElem(playerContainer, '.player-bottom');
     const sndBtn1 = await awaitElem(playerBottom, '.sound-control');
     const sndBtn2 = await awaitElem(playerContainer, ':scope > .sound-control');
-	if(isGM) { audioEnabled = await isAudioEnabled(); }
+	audioEnabled = await isEnabled(audioEnabledKey, false);
     if(soundBtnUnmuted(sndBtn2) != audioEnabled) { sndBtn2.click();}
     setupSoundButtonListener(sndBtn1);
     setupSoundButtonListener(sndBtn2);
