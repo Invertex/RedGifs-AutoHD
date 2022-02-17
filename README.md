@@ -1,8 +1,10 @@
 # Gfycat-AutoHD
 Automatically changes Gfycat/RedGifs videos to HD mode, improves progress bar interaction and strips "upgrade to pro" adverts.</br>
 
-Will also persist the mute/unmute value for audios on the website so that you no longer have to click Umute everytime you want to hear the audio.</br>
-Simply click mute or unmute to permanently persist that value for all future videos watched, turning it into a permanent toggle instead of a default "mute". (This is how Gfycat should have done it...)
+Also provides persistence for the autoplay and audio mute/unmute settings so that you no longer have to manually change them, even in private/incognito mode.<br>
+Simply toggle a setting to permanently persist it for all future videos watched, overriding the defaults.
+(This is how Gfycat should have done it...)
+
 
 Should work on Gfycat/RedGifs embeds on other websites as well, including Reddit.
 
