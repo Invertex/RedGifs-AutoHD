@@ -7,7 +7,7 @@
 // @license GPL-3.0-or-later; http://www.gnu.org/licenses/gpl-3.0.txt
 // @homepageURL https://github.com/Invertex/Gfycat-AutoHD
 // @supportURL https://github.com/Invertex/Gfycat-AutoHD
-// @version 1.84
+// @version 1.86
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.gfycat.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
@@ -17,13 +17,14 @@
 // @connect *.gfycat.com
 // @connect *.gifdeliverynetwork.com
 // @connect *.cdn.embedly.com
+// @connect *.api.redgifs.com
 // @grant GM.xmlHttpRequest
 // @grant GM_setValue
 // @grant GM_getValue
 // @grant GM.setValue
 // @grant GM.getValue
 // @grant GM_addValueChangeListener
-// @run-at document-idle
+// @run-at document-start
 
 // ==/UserScript==
 var isAdultSite;
@@ -68,6 +69,56 @@ if (!isGM)
 
 /** Global persistence End**/
 
+
+//Intercept request for video information and replace SD with HD content
+(function (open)
+ {
+    const processMediaEntry = function(media)
+    {
+         if(media.urls != null && media.urls.sd != null && media.urls.hd != null)
+         {
+             media.urls.sd = media.urls.hd;
+         }
+    }
+
+    //  if(!window.location.href.includes("//v3.")) { return; }
+    XMLHttpRequest.prototype.open = function (method, url)
+    {
+        if (url.includes('/v2/') || url.includes('/v3/'))
+        {
+            this.addEventListener('readystatechange', async function (e)
+                                  {
+                if (this.readyState === 4)
+                {
+                    let content = JSON.parse(e.target.response);
+
+                    if(content == null) { return; }
+
+                    if(content.gif != null)
+                    {
+                        processMediaEntry(content.gif);
+                    }
+                    else if(content.gifs != null)
+                    {
+                        let gifs = content.gifs;
+
+                        let gifCnt = content.gifs.length;
+                        for(let i = 0; i < gifCnt; i++)
+                        {
+                            processMediaEntry(gifs[i]);
+                        }
+                    }
+
+                    Object.defineProperty(this, 'responseText', { writable: true });
+                    this.responseText = JSON.stringify(content);
+                }
+            });
+        }
+
+        open.apply(this, arguments);
+    };
+})(XMLHttpRequest.prototype.open);
+
 (async function()
 {
     var url = window.location.href;
@@ -83,7 +134,7 @@ if (!isGM)
 
     const root = await awaitElem(document.body, '#root > div, #app');
 
-    if(!addHasModifiedClass(root))
+    if(root != null && !addHasModifiedClass(root))
     {
         if(url.includes('embedly') || url.includes('gifdeliverynetwork') || url.includes('/ifr/'))
         {//Embeds like on Reddit.
@@ -108,8 +159,16 @@ async function processEmbed(root)
 
 async function processMainSite(root)
 {
+    let v3feed = root.querySelector('.previewFeed');
+    if(v3feed != null)
+    {
+        console.log("v3 feed");
+        return;
+    }
+
     const processRoot = async function(root)
     {
+
         const main = await awaitElem(root, 'main, .content-page');
         if(!addHasModifiedClass(main))
         {
