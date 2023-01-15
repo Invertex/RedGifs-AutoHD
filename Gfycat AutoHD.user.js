@@ -164,14 +164,37 @@ async function processVideo(vidWrapper)
     let container = await awaitElem(vidWrapper, '.player-container, .player-body');
     if(addHasModifiedClass(container)) { return; }
 
-    let video = await awaitElem(container, 'VIDEO', {childList: true, subtree: false, attributes: false});
-    removeMobileQualityVideos(vidWrapper, video);
-    awaitElem(container, progressControlClass).then(customizeProgressBar);
-    modifySoundControl(container);
+    let playerControls = await awaitElem(container, 'div.player-controls', {childList: true, subtree: false, attributes: false});
+
+    await clickQualityButton(vidWrapper, playerControls);
+	modifySoundControl(container);
 
     //Website clears out all sub elements when you scroll far enough away, have to detect this change to process that element again since it won't show up in the main list mutations.
     watchForChange(vidWrapper, {childList: true, subtree: false, attributes: false}, (vw, mutation) => { processVideo(vw); });
 }
+
+
+function changeQualitySettings(settingsButton)
+{
+    let qualityIcon = settingsButton.querySelector('.quality, .icon-badge');
+    if(settingsButton && qualityIcon && !qualityIcon.innerText.includes("HD"))
+    {
+        settingsButton.click();
+    }
+};
+
+async function clickQualityButton(container, controls)
+{
+    controls.addEventListener('click', () => {
+        controls.click();
+        //Hack to fix progress bar going invisible permanently
+    });
+
+    let playBtn = controls.querySelector('.play-buttons > button, span[data-tooltip="Play"]');
+    let isPlaying = playBtn.querySelector('span.icon-pause') != null;
+
+    changeQualitySettings(controls.querySelector('div.right > span.settings-button, div.options-buttons > .has-badge'));
+};
 
 async function modifySoundControl(playerContainer)
 {
@@ -272,43 +295,6 @@ async function isResourceAvailable(url)
 
     return a == 200;
 }
-
-function changeQualitySettings(settingsButton, qualityIcon)
-{
-    if(settingsButton && qualityIcon && !qualityIcon.innerText.includes("HD"))
-    {
-        settingsButton.click();
-    }
-};
-
-async function removeMobileQualityVideos(container, video)
-{
-    if(video == null)
-    {
-        console.log("alternate vid locate method");
-        video = container.querySelector(iframeVideoClass);
-    }
-
-    if(video == null) { console.log("no vid"); return; }
-
-    let controls = container.querySelector('.player-controls');
-    let playBtn = controls.querySelector('.play-buttons > button, span[data-tooltip="Play"]');
-    let isPlaying = playBtn.querySelector('span.icon-pause') != null;
-    if(isPlaying)
-    {
-        playBtn.click(); //Have to pause, change quality, wait and then unpause to avoid RedGifs button events becoming glitched
-    }
-
-    let settingsButton = controls.querySelector('div.right > span.settings-button, div.options-buttons > .has-badge');
-    let qualityIcon = settingsButton.querySelector('.quality, .icon-badge');
-    changeQualitySettings(settingsButton, qualityIcon);
-
-    if(isPlaying && isAdultSite)
-    {
-        await sleep(200);
-        playBtn.click();
-    }
-};
 
 function hideElem(elem)
 {
