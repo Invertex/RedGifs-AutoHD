@@ -7,7 +7,7 @@
 // @license GPL-3.0-or-later; http://www.gnu.org/licenses/gpl-3.0.txt
 // @homepageURL https://github.com/Invertex/Gfycat-AutoHD
 // @supportURL https://github.com/Invertex/Gfycat-AutoHD
-// @version 1.86
+// @version 1.87
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.gfycat.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
@@ -24,7 +24,7 @@
 // @grant GM.setValue
 // @grant GM.getValue
 // @grant GM_addValueChangeListener
-// @run-at document-start
+// @run-at document-body
 
 // ==/UserScript==
 var isAdultSite;
