@@ -7,7 +7,7 @@
 // @license GPL-3.0-or-later; http://www.gnu.org/licenses/gpl-3.0.txt
 // @homepageURL https://github.com/Invertex/Gfycat-AutoHD
 // @supportURL https://github.com/Invertex/Gfycat-AutoHD
-// @version 1.87
+// @version 1.88
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.gfycat.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
@@ -132,7 +132,7 @@ if (!isGM)
 
     audioEnabled = await isEnabled(audioEnabledKey, false);
 
-    const root = await awaitElem(document.body, '#root > div, #app');
+    const root = document.body;
 
     if(root != null && !addHasModifiedClass(root))
     {
@@ -159,17 +159,12 @@ async function processEmbed(root)
 
 async function processMainSite(root)
 {
-    let v3feed = root.querySelector('.previewFeed');
-    if(v3feed != null)
-    {
-        console.log("v3 feed");
-        return;
-    }
+    if(root.querySelector('.previewFeed') != null) { return; } //We don't do any page interaction on V3 but instead directly intercept video response
 
     const processRoot = async function(root)
     {
-
         const main = await awaitElem(root, 'main, .content-page');
+
         if(!addHasModifiedClass(main))
         {
             processMain(main);
