@@ -7,7 +7,7 @@
 // @license GPL-3.0-or-later; http://www.gnu.org/licenses/gpl-3.0.txt
 // @homepageURL https://github.com/Invertex/Gfycat-AutoHD
 // @supportURL https://github.com/Invertex/Gfycat-AutoHD
-// @version 1.88
+// @version 1.89
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.gfycat.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
@@ -69,7 +69,6 @@ if (!isGM)
 
 /** Global persistence End**/
 
-
 //Intercept request for video information and replace SD with HD content
 (function (open)
  {
@@ -84,7 +83,8 @@ if (!isGM)
     //  if(!window.location.href.includes("//v3.")) { return; }
     XMLHttpRequest.prototype.open = function (method, url)
     {
-        if (url.includes('/v2/') || url.includes('/v3/'))
+
+        if (url.includes('/v2/') || url.includes('/v3/')|| url.includes('/v1/'))
         {
             this.addEventListener('readystatechange', async function (e)
                                   {
@@ -132,7 +132,7 @@ if (!isGM)
 
     audioEnabled = await isEnabled(audioEnabledKey, false);
 
-    const root = document.body;
+    const root = isAdultSite ? document.body : await awaitElem(document.body, '#root > div, #app');
 
     if(root != null && !addHasModifiedClass(root))
     {
