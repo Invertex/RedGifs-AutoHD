@@ -7,7 +7,7 @@
 // @license GPL-3.0-or-later; http://www.gnu.org/licenses/gpl-3.0.txt
 // @homepageURL https://github.com/Invertex/Gfycat-AutoHD
 // @supportURL https://github.com/Invertex/Gfycat-AutoHD
-// @version 1.89
+// @version 1.95
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.gfycat.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
@@ -27,6 +27,7 @@
 // @run-at document-body
 
 // ==/UserScript==
+//** GFYCAT IS SHUTTING DOWN SEPT 1st, MAKE SURE TO SAVE YOUR CONTENT.  RedGifs will remain running. **//
 var isAdultSite;
 
 const thumbsSubDomain = '//thumbs.';
@@ -39,8 +40,10 @@ const settingsButtonClass = 'span.settings-button';
 const progressControlClass = '.progress-control';
 const autoplayButtonSelector = "div.upnext-control div.switch input[type='checkbox']";
 const modifiedAttr = "gfyHD";
+
 //Hide advertisement stuff
 addGlobalStyle('.pro-cta, .toast-notification--pro-cta, .placard-wrapper, .ad, .top-slot, #adsbox, #jerky-im, .side-slot, .signup-call-to-action, .adsbyexoclick-wrapper, .trafficstars_ad, #fpa_layer { display: none !important; }');
+addGlobalStyle('.infinite-scroll-component { overflow:visible !important; }');
 
 /** Global persistence Start**/
 var autoplayEnabled = true;
@@ -90,27 +93,30 @@ if (!isGM)
                                   {
                 if (this.readyState === 4)
                 {
-                    let content = JSON.parse(e.target.response);
-
-                    if(content == null) { return; }
-
-                    if(content.gif != null)
+                    try
                     {
-                        processMediaEntry(content.gif);
-                    }
-                    else if(content.gifs != null)
-                    {
-                        let gifs = content.gifs;
+                        let content = JSON.parse(e.target.response);
 
-                        let gifCnt = content.gifs.length;
-                        for(let i = 0; i < gifCnt; i++)
+                        if(content == null) { return; }
+
+                        if(content.gif != null)
                         {
-                            processMediaEntry(gifs[i]);
+                            processMediaEntry(content.gif);
                         }
-                    }
+                        else if(content.gifs != null)
+                        {
+                            let gifs = content.gifs;
 
-                    Object.defineProperty(this, 'responseText', { writable: true });
-                    this.responseText = JSON.stringify(content);
+                            let gifCnt = content.gifs.length;
+                            for(let i = 0; i < gifCnt; i++)
+                            {
+                                processMediaEntry(gifs[i]);
+                            }
+                        }
+
+                        Object.defineProperty(this, 'responseText', { writable: true });
+                        this.responseText = JSON.stringify(content);
+                    } catch(e){}
                 }
             });
         }
@@ -159,16 +165,23 @@ async function processEmbed(root)
 
 async function processMainSite(root)
 {
-    if(root.querySelector('.previewFeed') != null) { return; } //We don't do any page interaction on V3 but instead directly intercept video response
-
     const processRoot = async function(root)
     {
-        const main = await awaitElem(root, 'main, .content-page');
+        const main = await awaitElem(root, 'main, .content-page, #root > div.nav');
 
         if(!addHasModifiedClass(main))
         {
-            processMain(main);
-            watchForChange(main, {childList: true, subtree: false, attributes: false}, (main, mutation) => { processMain(main); });
+            if(main.className.includes('nav'))
+            {
+                let feed = await awaitElem(main, 'div.page');
+                processMainRGV3(feed);
+                watchForChange(feed, {childList: true, subtree: false, attributes: false}, (main, mutation) => { processMainRGV3(feed); });
+            }
+            else
+            {
+                processMain(main);
+                watchForChange(main, {childList: true, subtree: false, attributes: false}, (main, mutation) => { processMain(main); });
+            }
         }
     };
 
@@ -176,10 +189,23 @@ async function processMainSite(root)
     watchForChange(root, {childList: true, subtree: false, attributes: false}, (rootChanged, mutation) => { processRoot(rootChanged); });
 }
 
+async function processMainRGV3(main)
+{
+    const mainVideoWrapper = await awaitElem(main, 'div.video-player-wrapper, div.player', {childList: true, subtree: true, attributes: false});
+    const scrollFeed = await awaitElem(main.parentElement, 'div.previewFeed');
+    console.log("proc main");
+    if(!addHasModifiedClass(scrollFeed))
+    {
+        watchForChange(scrollFeed, {childList: true, subtree: false, attributes: false}, (main, mutation) => { processVideoList(scrollFeed.childNodes); });
+    }
+
+    processVideoList(scrollFeed.childNodes);
+}
+
 async function processMain(main)
 {
     const mainVideoWrapper = await awaitElem(main, 'div.video-player-wrapper, div.player', {childList: true, subtree: true, attributes: false});
-    const scrollFeed = await awaitElem(main.parentElement, '.related-feed .content-wrapper, div.block-2 > div:not(.first-row), div.related-feed div.content-wrapper');
+    const scrollFeed = await awaitElem(main.parentElement, '.related-feed .content-wrapper, div.block-2 > div:not(.first-row), div.related-feed div.content-wrapper, div.previewFeed');
 
     if(!addHasModifiedClass(mainVideoWrapper.parentElement))
     {
@@ -191,6 +217,7 @@ async function processMain(main)
     }
 
     processVideoList(scrollFeed.querySelectorAll('.player-wrapper > .player, .gif-feed-card > .content-sizer'));
+    processVideoList(main.querySelectorAll('div.player'));
     watchForChange(scrollFeed, {childList: true, subtree: false, attributes: false}, (feed, mutation) => { processVideoList(mutation.addedNodes); });
 }
 
@@ -206,6 +233,7 @@ async function setAutoplayState(autoplayButton)
 
 async function processVideoList(vids)
 {
+    console.log(vids.length);
     vids.forEach(processVideo);
 }
 
@@ -215,6 +243,11 @@ async function processVideo(vidWrapper)
     {//Advert slot, skip
         return;
     }
+    if(vidWrapper.style.aspectRation != "") {
+        processVideoV3(vidWrapper);
+        return;
+       }
+
     let container = await awaitElem(vidWrapper, '.player-container, .player-body');
     if(addHasModifiedClass(container)) { return; }
 
@@ -227,6 +260,15 @@ async function processVideo(vidWrapper)
     watchForChange(vidWrapper, {childList: true, subtree: false, attributes: false}, (vw, mutation) => { processVideo(vw); });
 }
 
+async function processVideoV3(vidWrapper)
+{
+    let aspect = vidWrapper.style.aspectRatio.split('/');
+    let width = parseInt(aspect[0]) * 2.0;
+    let height = parseInt(aspect[1]) * 1.0;
+    if(width == null) {return; }
+    let perc = (width / height) * 100.0;
+    vidWrapper.style.width = perc + "%";
+}
 
 function changeQualitySettings(settingsButton)
 {
