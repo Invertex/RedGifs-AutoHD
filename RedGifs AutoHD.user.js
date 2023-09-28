@@ -2,11 +2,13 @@
 // @name RedGifs AutoHD
 // @author Invertex
 // @description Automatically sets RedGifs video to HD mode and does layout improvements
-// @icon https://github.com/Invertex/RedGifs-AutoHD/raw/master/logo.png
+// @icon https://www.google.com/s2/favicons?sz=64&domain=redgifs.com
 // @namespace https://greasyfork.org/users/137547
 // @license GPL-3.0-or-later; http://www.gnu.org/licenses/gpl-3.0.txt
 // @homepageURL https://github.com/Invertex/RedGifs-AutoHD
 // @supportURL https://github.com/Invertex/RedGifs-AutoHD
+// @updateURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
+// @downloadURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
 // @version 2.1
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*

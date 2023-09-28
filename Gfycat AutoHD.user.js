@@ -7,14 +7,13 @@
 // @license GPL-3.0-or-later; http://www.gnu.org/licenses/gpl-3.0.txt
 // @homepageURL https://github.com/Invertex/Gfycat-AutoHD
 // @supportURL https://github.com/Invertex/Gfycat-AutoHD
-// @version 1.95
+// @updateURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
+// @downloadURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
+// @version 1.98
 // @match *://*.gifdeliverynetwork.com/*
-// @match *://cdn.embedly.com/widgets/media.html?src=*://*.gfycat.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
-// @match *://*.gfycat.com/*
 // @match *://*.redgifs.com/*
 // @connect *.redgifs.com
-// @connect *.gfycat.com
 // @connect *.gifdeliverynetwork.com
 // @connect *.cdn.embedly.com
 // @connect *.api.redgifs.com
@@ -40,10 +39,6 @@ const settingsButtonClass = 'span.settings-button';
 const progressControlClass = '.progress-control';
 const autoplayButtonSelector = "div.upnext-control div.switch input[type='checkbox']";
 const modifiedAttr = "gfyHD";
-
-//Hide advertisement stuff
-addGlobalStyle('.pro-cta, .toast-notification--pro-cta, .placard-wrapper, .ad, .top-slot, #adsbox, #jerky-im, .side-slot, .signup-call-to-action, .adsbyexoclick-wrapper, .trafficstars_ad, #fpa_layer { display: none !important; }');
-addGlobalStyle('.infinite-scroll-component { overflow:visible !important; }');
 
 /** Global persistence Start**/
 var autoplayEnabled = true;
