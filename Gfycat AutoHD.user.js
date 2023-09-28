@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name Gfycat AutoHD
+// @name RedGifs AutoHD
 // @author Invertex
 // @description Automatically sets Gfycat/RedGifs video to HD mode and other improvements
 // @icon https://github.com/Invertex/Gfycat-AutoHD/raw/master/logo.png
