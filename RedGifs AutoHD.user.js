@@ -9,7 +9,7 @@
 // @supportURL https://github.com/Invertex/RedGifs-AutoHD
 // @updateURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
 // @downloadURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
-// @version 2.1
+// @version 2.12
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
 // @match *://*.redgifs.com/*
@@ -43,6 +43,9 @@ const pageWidth = "80%";
 //GM_addStyle('.pro-cta, .toast-notification--pro-cta, .placard-wrapper, .ad, .top-slot, #adsbox, #jerky-im, .side-slot, .signup-call-to-action, .adsbyexoclick-wrapper, .trafficstars_ad, #fpa_layer { display: none !important; }');
 GM_addStyle('.infinite-scroll-component { overflow:visible !important; }');
 GM_addStyle(`.skyWrapper>.side { display: contents !important; }`);
+GM_addStyle(`.previewFeed > .seeMoreBlock, .previewFeed > .nicheListWidget { max-width: 95% !important; }`);
+GM_addStyle(`.previewFeed > .trendingTags, .explorePage > .trendingTags, .explorePage > .nicheListWidget { height: auto !important; }`);
+GM_addStyle(`.previewFeed > .nicheListWidget > .columns, .explorePage > .nicheListWidget > .columns { column-count: 4 !important; }`);
 GM_addStyle(`.previewFeed,.skyWrapper > .middle { max-width: ${pageWidth} !important; }`);
 GM_addStyle(`.page.watchPage, .middle > .explorePage, .middle > .exploreGifsPage { width: ${pageWidth} !important; }`);
 GM_addStyle(`.player .preview, .skyWrapper > .middle, .previewFeed { width: 100% !important; }`);
