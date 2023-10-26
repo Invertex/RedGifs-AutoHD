@@ -9,7 +9,7 @@
 // @supportURL https://github.com/Invertex/RedGifs-AutoHD
 // @updateURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
 // @downloadURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
-// @version 2.12
+// @version 2.14
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
 // @match *://*.redgifs.com/*
@@ -87,6 +87,7 @@ if (!isGM)
     {
          if(media.urls != null && media.urls.sd != null && media.urls.hd != null)
          {
+             if(media.hls != null) { media.hls = false; }
              media.urls.sd = media.urls.hd;
          }
     }
