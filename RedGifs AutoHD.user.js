@@ -9,7 +9,7 @@
 // @supportURL https://github.com/Invertex/RedGifs-AutoHD
 // @updateURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
 // @downloadURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
-// @version 2.14
+// @version 2.16
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
 // @match *://*.redgifs.com/*
@@ -52,6 +52,8 @@ GM_addStyle(`.player .preview, .skyWrapper > .middle, .previewFeed { width: 100%
 GM_addStyle(`.watchPage .center,.page > .homeFeed { max-width: 100% !important; }`);
 GM_addStyle(`.right.side > div,.left.side > div,.wide.page.creatorPage  { width: auto !important; }`);
 GM_addStyle(`.appFooter  { overflow-y: hidden !important; }`);
+GM_addStyle(`.fullScreen .watchPage .previewFeed, .fullScreen .watchPage .previewFeed1 { max-width: 100% !important; }`);
+GM_addStyle(`.Video-OverLayer { display: none !important; }`);
 
 /** Global persistence Start**/
 var autoplayEnabled = true;
