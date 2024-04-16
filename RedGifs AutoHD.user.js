@@ -9,7 +9,7 @@
 // @supportURL https://github.com/Invertex/RedGifs-AutoHD
 // @updateURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
 // @downloadURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
-// @version 2.16
+// @version 2.19
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
 // @match *://*.redgifs.com/*
@@ -24,6 +24,7 @@
 // @grant GM.getValue
 // @grant GM_addValueChangeListener
 // @grant GM_addStyle
+// @grant GM_download
 // @run-at document-start
 
 // ==/UserScript==
@@ -41,19 +42,120 @@ const pageWidth = "80%";
 
 //Hide advertisement stuff
 //GM_addStyle('.pro-cta, .toast-notification--pro-cta, .placard-wrapper, .ad, .top-slot, #adsbox, #jerky-im, .side-slot, .signup-call-to-action, .adsbyexoclick-wrapper, .trafficstars_ad, #fpa_layer { display: none !important; }');
-GM_addStyle('.infinite-scroll-component { overflow:visible !important; }');
-GM_addStyle(`.skyWrapper>.side { display: contents !important; }`);
-GM_addStyle(`.previewFeed > .seeMoreBlock, .previewFeed > .nicheListWidget { max-width: 95% !important; }`);
-GM_addStyle(`.previewFeed > .trendingTags, .explorePage > .trendingTags, .explorePage > .nicheListWidget { height: auto !important; }`);
-GM_addStyle(`.previewFeed > .nicheListWidget > .columns, .explorePage > .nicheListWidget > .columns { column-count: 4 !important; }`);
-GM_addStyle(`.previewFeed,.skyWrapper > .middle { max-width: ${pageWidth} !important; }`);
-GM_addStyle(`.page.watchPage, .middle > .explorePage, .middle > .exploreGifsPage { width: ${pageWidth} !important; }`);
-GM_addStyle(`.player .preview, .skyWrapper > .middle, .previewFeed { width: 100% !important; }`);
-GM_addStyle(`.watchPage .center,.page > .homeFeed { max-width: 100% !important; }`);
-GM_addStyle(`.right.side > div,.left.side > div,.wide.page.creatorPage  { width: auto !important; }`);
-GM_addStyle(`.appFooter  { overflow-y: hidden !important; }`);
-GM_addStyle(`.fullScreen .watchPage .previewFeed, .fullScreen .watchPage .previewFeed1 { max-width: 100% !important; }`);
-GM_addStyle(`.Video-OverLayer { display: none !important; }`);
+GM_addStyle(`infinite-scroll-component {
+  overflow: visible !important;
+}
+.skyWrapper > .side, skyWrapper > .side {
+  display: contents !important;
+}
+.previewFeed > .seeMoreBlock,
+.previewFeed > .nicheListWidget {
+  max-width: 95% !important;
+}
+.previewFeed > .trendingTags,
+.explorePage > .trendingTags,
+.explorePage > .nicheListWidget {
+  height: auto !important;
+}
+.previewFeed > .nicheListWidget > .columns,
+.explorePage > .nicheListWidget > .columns {
+  column-count: 8 !important;
+  row-count: 1 !important;
+}
+.nicheListWidget .rows .row {
+  display: contents !important;
+  flex-direction: unset !important;
+  .title {
+    width: auto !important;
+  }
+}
+.nicheGifList .previewFeed {
+  margin: auto !important;
+}
+.seeMoreBlock > .contents.grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  grid-template-rows: repeat(1, minmax(0, 1fr)) !important;
+}
+.contents > .userTile {
+  max-height: 10em !important;
+  .main > .thumbnail {
+    width: 10em !important;
+  }
+}
+.right.side > div,
+.left.side > div,
+.wide.page.creatorPage {
+  width: auto !important;
+}
+.appFooter {
+  overflow-y: hidden !important;
+}
+.Video-OverLayer,
+.SideBar-Item:has(img[alt^="Live site"]) {
+  display: none !important;
+}
+.rgDlBtn {
+  background-color: transparent;
+  border: none;
+}
+.rgDlSVG:hover {
+  background-color: rgba(143, 44, 242, 0.5);
+  border-radius: 12px;
+}
+.rgDlSVG:focus {
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+.nicheListWidget > .rows {
+  min-height: 0px !important;
+}
+.skyWrapper > .middle {
+  width: 80% !important;
+}
+/* OUTTER FEED CONTAINERS */
+
+.middle > .page,
+.middle > .watchPage,
+.middle > .explorePage,
+.middle > .exploreGifsPage,
+.page.narrow,
+.page.wide
+{
+  max-width: 100% !important;
+  width: 70% !important;
+}
+/* FEED CONTAINER */
+.page > .watchFeed, .page > .center,
+.middle > .homePage {
+ max-width: 80% !important;
+ width: 80% !important;
+}
+
+/* MAIN FEED */
+.previewFeed,
+.fullScreen .watchPage .previewFeed,
+.fullScreen .watchPage .previewFeed1
+{
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+}
+/* FEED ITEMS */
+.previewFeed > div {
+width: auto !important;
+max-width: 90% !important;
+}
+`);
+
+const dlSVG = '<svg class="rgDlSVG" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill="white" d="m 3.9472656,2.0820312 c -0.9135398,0 -0.9135398,1.4375 0,1.4375 H 21 c 0.913541,0 0.913541,-1.4375 0,-1.4375 z m 8.5253904,3.484375 c -0.380641,0 -0.759765,'+
+      '0.1798801 -0.759765,0.5390626 V 17.886719 c 0,0.862037 -2.6e-4,1.723988 -0.457032,1.292969 L 5.1660156,14.007812 c -0.4567702,-0.431018 -1.9800328,0.287496 -1.21875,1.00586 l 6.6992184,5.603516 c 1.82708,1.43673 1.827215,1.43673 3.654297,0 L 21,15.013672 c 0.761283,'+
+      '-0.718364 -0.609723,-1.580552 -1.21875,-1.00586 l -6.089844,5.171876 c -0.456769,0.431019 -0.457031,-0.430932 -0.457031,-1.292969 V 6.1054688 c 0,-0.3591825 -0.381078,-0.5390626 -0.761719,-0.5390626 z"></path></svg>';
+
+const hdSVGPaths = '<path fill-rule="evenodd" clip-rule="evenodd" d="M1.16712 2.51909C0 4.12549 0 6.41699 0 11C0 15.583 0 17.8745 1.16712 19.4809C1.54405 19.9997 2.00029 20.456 2.51909 '+
+      '20.8329C4.12549 22 6.41699 22 11 22C15.583 22 17.8745 22 19.4809 20.8329C19.9997 20.456 20.456 19.9997 20.8329 19.4809C22 17.8745 22 15.583 22 11C22 6.41699 22 4.12549 20.8329 2.51909C20.456 2.00029 19.9997 1.54405 19.4809 1.16712C17.8745 0 15.583 0 11 0C6.41699 0 4.12549 '+
+      '0 2.51909 1.16712C2.00029 1.54405 1.54405 2.00029 1.16712 2.51909ZM10.0756 15V6.66H8.70763V10.236H4.78363V6.66H3.41563V15H4.78363V11.352H8.70763V15H10.0756ZM16.9286 7.176C16.2646 6.832 15.4886 6.66 14.6006 6.66H11.8766V15H14.6006C15.4886 15 16.2646 14.836 16.9286 '+
+      '14.508C17.6006 14.172 18.1166 13.692 18.4766 13.068C18.8446 12.444 19.0286 11.708 19.0286 10.86C19.0286 10.012 18.8446 9.272 18.4766 8.64C18.1166 8 17.6006 7.512 16.9286 7.176ZM16.8446 13.092C16.3246 13.62 15.5766 13.884 14.6006 13.884H13.2446V7.776H14.6006C15.5766 '+
+      '7.776 16.3246 8.048 16.8446 8.592C17.3646 9.136 17.6246 9.892 17.6246 10.86C17.6246 11.82 17.3646 12.564 16.8446 13.092Z" fill="white"></path>';
 
 /** Global persistence Start**/
 var autoplayEnabled = true;
@@ -90,7 +192,13 @@ if (!isGM)
          if(media.urls != null && media.urls.sd != null && media.urls.hd != null)
          {
              if(media.hls != null) { media.hls = false; }
-             media.urls.sd = media.urls.hd;
+             let hdurl = media.urls.hd;
+             media.urls.sd = hdurl;
+             if(!hdurl.includes('.mp4?'))
+             {
+                 media.urls.thumbnail = hdurl;
+                 media.urls.poster = hdurl;
+             }
          }
     }
 
@@ -109,7 +217,7 @@ if (!isGM)
                         let content = JSON.parse(e.target.response);
 
                         if(content == null) { return; }
-
+console.log(content);
                         if(content.gif != null)
                         {
                             processMediaEntry(content.gif);
@@ -138,7 +246,7 @@ if (!isGM)
 
 (async function()
 {
-    var url = window.location.href;
+    let url = window.location.href;
 
     if (url.includes(thumbsSubDomain) || url.includes(redgCDN))
     {
@@ -163,14 +271,9 @@ if (!isGM)
     }
 })();
 
-async function processEmbed(root)
+function processEmbed(root)
 {
-     const processRoot = async function(root)
-    {
-        awaitElem(root, 'div.player-wrapper, div.iframe-player-container').then(processVideo);
-    };
-    processRoot(root);
-    watchForChange(root, {childList: true, subtree: false, attributes: false}, (rootChanged, mutation) => { processRoot(rootChanged); });
+    awaitElem(root, 'div.player-wrapper, div.iframe-player-container').then(processFeedEntry);
 }
 
 async function processMainSite(root)
@@ -179,51 +282,184 @@ async function processMainSite(root)
     {
         const main = await awaitElem(root, 'main, .content-page, #root > div.nav');
 
-        if(!addHasModifiedClass(main))
+      if(!addHasModifiedClass(main))
         {
-            let feed = await awaitElem(main, 'div.page');
-            processMain(feed);
-            watchForChange(feed, {childList: true, subtree: false, attributes: false}, (main, mutation) => { processMain(feed); });
+            let middle = await awaitElem(main, '.routeWrapper');
+            if(!addHasModifiedClass(middle))
+            {
+
+                processMain(middle);
+                watchForChange(middle, {childList: true, subtree: false, attributes: false}, (main, mutation) => { processMain(middle); });
+            }
+
         }
     };
 
-    processRoot(root);
+    await processRoot(root);
     watchForChange(root, {childList: true, subtree: false, attributes: false}, (rootChanged, mutation) => { processRoot(rootChanged); });
 }
 
-async function processMain(main)
+async function processMain(middle)
 {
-    const mainVideoWrapper = await awaitElem(main, 'div.video-player-wrapper, div.player', {childList: true, subtree: true, attributes: false});
-    const scrollFeed = await awaitElem(main.parentElement, 'div.previewFeed');
-    console.log("proc main");
+    const mainVideoWrapper = await awaitElem(middle, 'div.Player, div.video-player-wrapper', {childList: true, subtree: true, attributes: false});
+    const scrollFeed = await awaitElem(middle, 'div.previewFeed');
+
     if(!addHasModifiedClass(scrollFeed))
     {
-        watchForChange(scrollFeed, {childList: true, subtree: false, attributes: false}, (main, mutation) => { processVideoList(scrollFeed.childNodes); });
+        if(!addHasModifiedClass(scrollFeed.parentElement))
+        {
+            watchForChange(scrollFeed.parentElement, {childList: true, subtree: false, attributes: false}, (rootChanged, mutation) => { processMain(middle); });
+            if(!addHasModifiedClass(scrollFeed.parentElement.parentElement))
+            {
+                watchForChange(scrollFeed.parentElement.parentElement, {childList: true, subtree: false, attributes: false}, (rootChanged, mutation) => { processMain(middle); });
+            }
+        }
+        await onFeedUpdated(scrollFeed, scrollFeed.childNodes);
+        watchForAddedNodes(scrollFeed, onFeedUpdated);
     }
-
-    processVideoList(scrollFeed.childNodes);
 }
 
-async function processVideoList(vids)
+async function onFeedUpdated(root, feedEntries)
 {
-    vids.forEach(processVideo);
+    feedEntries.forEach(processFeedEntry);
 }
 
-async function processVideo(vidWrapper)
+async function processFeedEntry(mediaWrapper)
 {
-    if(vidWrapper.className.includes('placard-wrapper'))
-    {//Advert slot, skip
+
+    if(addHasModifiedClass(mediaWrapper)){ return; }
+
+    const classes = mediaWrapper.className;
+    if(classes.includes('placard-wrapper') || classes.includes('seeMoreBlock') || classes.includes('trendingTags') || classes.includes("Placeholder"))
+    {//Not content, skip
         return;
     }
-    if(vidWrapper.style.aspectRation != "")
+
+    if(mediaWrapper.style.aspectRatio != "")
     {
-        let aspect = vidWrapper.style.aspectRatio.split('/');
+        let aspect = mediaWrapper.style.aspectRatio.split('/');
         let width = parseInt(aspect[0]) * 2.0;
         let height = parseInt(aspect[1]) * 1.0;
         if(width == null) {return; }
         let perc = (width / height) * 100.0;
-          //  vidWrapper.style.width = perc + "%";
+        mediaWrapper.style.width = perc + "%";
     }
+
+    let sidebar = await awaitElem(mediaWrapper, ".Player-SideBarWrap");
+    await addDownloadButton(mediaWrapper, sidebar);
+
+    watchForAddedNodes(mediaWrapper, function(root, addedNodes)
+    {
+        let addedSideBar = null;
+        let addedMetaData = null;
+
+        addedNodes.forEach((nodey) => {
+            if(nodey.className.includes('Player-SideBarWrap'))
+            {
+                addedSideBar = nodey;
+            }
+            else if(nodey.className.includes('Player-MetaInfo'))
+            {
+                addedMetaData = nodey;
+            }
+        });
+        if(addedSideBar != null)
+        {
+            addDownloadButton(root, addedSideBar, addedMetaData);
+        }
+    });
+}
+
+async function getFilenameFromMetaData(metaData, videoUrl)
+{
+    let username = "";
+    let date = "";
+    let description = "";
+    let link = metaData.querySelector('.UserInfo-UserLink');
+    let followBtn = metaData.querySelector('.UserInfo-FollowBtn');
+    let dateInfo = metaData.querySelector('.UserInfo-Date');
+    let descInfo = metaData.querySelector('.UserInfo-Description');
+
+    if(link != null) { username = link.href.split('/').slice(-1)[0]; }
+    else if (followBtn != null) { username = followBtn.title; }
+
+    if(dateInfo != null)
+    {
+        let datey = new Date(dateInfo.innerText);
+        date = datey.toISOString().split('T')[0];
+    }
+
+    if(descInfo) {
+        let moreBtn = descInfo.querySelector('button[aria-label*="more"]');
+
+        if(moreBtn != null) {
+            moreBtn.click();
+            await returnOnChange(moreBtn, {childList: false, subtree: false, attributes: true});
+        }
+        description = descInfo.innerHTML.split('<')[0].substring(0,50) + ' - '; }
+
+    let file = videoUrl.split('?')[0].split('/').slice(-1)[0].split('.')[0];
+
+    return username + '_' + date + '_' + description + file;
+}
+
+async function addDownloadButton(mediaWrapper, sideBar, metaData)
+{
+    let contentSrc = null;
+
+    if(mediaWrapper.className.includes('Player_isImage'))
+    {
+        let img = await awaitElem(mediaWrapper, ".Player-BackdropWrap > img");
+        contentSrc = img.src;
+    }
+    else
+    {
+        let video = await awaitElem(mediaWrapper, "video");
+
+        let qualBtn = sideBar.querySelector('.QualityButton > svg');
+        if(qualBtn != null && !video.src.includes('-mobile.'))
+        {
+            qualBtn.innerHTML = hdSVGPaths;
+            let parent = qualBtn.parentElement;
+            parent.className = parent.className.replace(' sd', ' hd');
+            contentSrc = video.src;
+        }
+    }
+    if(metaData == null)
+    {
+        metaData = await awaitElem(sideBar.parentElement, '.Player-MetaInfo');
+    }
+
+    if(contentSrc === null) { return; }
+
+    let dlWrap = document.createElement('div');
+    dlWrap.className = 'SideBar-Item';
+
+    let dlBtn = document.createElement("button");
+    dlBtn.className = "rgDlBtn";
+
+    dlWrap.appendChild(dlBtn);
+    sideBar.firstElementChild.appendChild(dlWrap);
+
+    dlBtn.innerHTML = dlSVG;
+
+    dlBtn.onclick = async function()
+    {
+        let filename = metaData != null ? await getFilenameFromMetaData(metaData, contentSrc) : contentSrc.split('?')[0].split('/').slice(-1)[0].split('.')[0];
+        download(contentSrc, filename);
+    };
+}
+
+function download(url, filename)
+{
+    filename = filename.replace(/[\\/:*?".<>|]/g, '').trim(); //Sanitize filename
+
+    GM_download(
+    {
+        name: filename,
+        url: url,
+        onload: function () { /*LogMessage(`Downloaded ${url}!`);*/ }
+    });
 }
 
 
@@ -349,11 +585,31 @@ async function awaitElem(root, query, mutationArgs = {childList: true, subtree: 
     });
 }
 
+function watchForAddedNodes(root, onNodesAdded, obsArgs = {childList: true, subtree: false, attributes: false})
+{
+    const onMutated = (root, mutation) =>
+    {
+        if (mutation.addedNodes != null && mutation.addedNodes.length > 0)
+        {
+            onNodesAdded(root, mutation.addedNodes);
+        }
+    };
+    const observer = watchForChange(root, obsArgs, onMutated);
+}
+
+function returnOnChange(target, obsArguments, resolve)
+{
+     return new Promise(resolve => watchForChange(target, obsArguments, resolve));
+}
+
 function watchForChange(root, obsArguments, onChange)
 {
     const rootObserver = new MutationObserver(function(mutations) {
+        rootObserver.disconnect();
         mutations.forEach((mutation) => onChange(root, mutation));
+        rootObserver.observe(root, obsArguments);
     });
+
     rootObserver.observe(root, obsArguments);
     return rootObserver;
 }
