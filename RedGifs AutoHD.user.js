@@ -9,7 +9,7 @@
 // @supportURL https://github.com/Invertex/RedGifs-AutoHD
 // @updateURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
 // @downloadURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
-// @version 2.22
+// @version 2.24
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
 // @match *://*.redgifs.com/*
@@ -18,11 +18,6 @@
 // @connect *.cdn.embedly.com
 // @connect *.api.redgifs.com
 // @grant GM.xmlHttpRequest
-// @grant GM_setValue
-// @grant GM_getValue
-// @grant GM.setValue
-// @grant GM.getValue
-// @grant GM_addValueChangeListener
 // @grant GM_addStyle
 // @grant GM_download
 // @run-at document-start
@@ -38,10 +33,8 @@ const settingsButtonClass = 'span.settings-button';
 const progressControlClass = '.progress-control';
 const autoplayButtonSelector = "div.upnext-control div.switch input[type='checkbox']";
 const modifiedAttr = "gfyHD";
-const pageWidth = "80%";
 
-//Hide advertisement stuff
-//GM_addStyle('.pro-cta, .toast-notification--pro-cta, .placard-wrapper, .ad, .top-slot, #adsbox, #jerky-im, .side-slot, .signup-call-to-action, .adsbyexoclick-wrapper, .trafficstars_ad, #fpa_layer { display: none !important; }');
+
 GM_addStyle(`infinite-scroll-component {
   overflow: visible !important;
 }
@@ -157,30 +150,6 @@ const hdSVGPaths = '<path fill-rule="evenodd" clip-rule="evenodd" d="M1.16712 2.
       '14.508C17.6006 14.172 18.1166 13.692 18.4766 13.068C18.8446 12.444 19.0286 11.708 19.0286 10.86C19.0286 10.012 18.8446 9.272 18.4766 8.64C18.1166 8 17.6006 7.512 16.9286 7.176ZM16.8446 13.092C16.3246 13.62 15.5766 13.884 14.6006 13.884H13.2446V7.776H14.6006C15.5766 '+
       '7.776 16.3246 8.048 16.8446 8.592C17.3646 9.136 17.6246 9.892 17.6246 10.86C17.6246 11.82 17.3646 12.564 16.8446 13.092Z" fill="white"></path>';
 
-/** Global persistence Start**/
-var autoplayEnabled = true;
-const autoplayEnabledKey = "gfyHD_autoplayEnabled";
-
-var audioEnabled = false;
-const audioEnabledKey = "gfyHD_audioEnabled";
-
-//Sadly Greasemonkey does not have this functionality... Tampermonkey really is superior.
-const isGM = (typeof GM_addValueChangeListener === 'undefined');
-
-async function isEnabled(key, defaultValue)
-{
-  return isGM ? await GM.getValue(key, defaultValue) : GM_getValue(key, defaultValue);
-}
-async function setEnabled(key, value)
-{
-  return isGM ? await GM.setValue(key, value) : GM_setValue(key, value);
-}
-
-if (!isGM)
-{
-    GM_addValueChangeListener(autoplayEnabledKey, (name, oldValue, newValue, remote) => { autoplayEnabled = newValue; });
-	GM_addValueChangeListener(audioEnabledKey, (name, oldValue, newValue, remote) => { audioEnabled = newValue; });
-}
 
 /** Global persistence End**/
 
@@ -253,8 +222,6 @@ if (!isGM)
         return;
     }
 
-    audioEnabled = await isEnabled(audioEnabledKey, false);
-
     const root = document.body;
 
     if(root != null && !addHasModifiedClass(root))
@@ -270,9 +237,11 @@ if (!isGM)
     }
 })();
 
-function processEmbed(root)
+async function processEmbed(root)
 {
-    awaitElem(root, 'div.player-wrapper, div.iframe-player-container').then(processFeedEntry);
+    let content = await awaitElem(root, '.Wrapper .routeWrapper,div.player-wrapper, div.iframe-player-container');
+    let sidebar = await awaitElem(content, ".buttons");
+    addDownloadButton(content, sidebar);
 }
 
 async function processMainSite(root)
@@ -325,7 +294,6 @@ async function onFeedUpdated(root, feedEntries)
 
 async function processFeedEntry(mediaWrapper)
 {
-
     if(addHasModifiedClass(mediaWrapper)){ return; }
 
     const classes = mediaWrapper.className;
@@ -369,7 +337,7 @@ async function processFeedEntry(mediaWrapper)
     });
 }
 
-async function getFilenameFromMetaData(metaData, mediaURL, appendNum)
+async function getFilenameFromMetaData(metaData, mediaURL, mediaURLOG, appendNum)
 {
     let username = "";
     let date = "";
@@ -377,9 +345,9 @@ async function getFilenameFromMetaData(metaData, mediaURL, appendNum)
 
     if(metaData != null)
     {
-        let link = metaData.querySelector('.UserInfo-UserLink');
+        let link = metaData.querySelector('.UserInfo-UserLink, .author > a');
         let followBtn = metaData.querySelector('.UserInfo-FollowBtn');
-        let dateInfo = metaData.querySelector('.UserInfo-Date');
+        let dateInfo = metaData.querySelector('.UserInfo-Date, .text > .date > a');
         let descInfo = metaData.querySelector('.UserInfo-Description');
 
         if(link != null) { username = link.href.split('/').slice(-1)[0]; }
@@ -400,13 +368,18 @@ async function getFilenameFromMetaData(metaData, mediaURL, appendNum)
                 moreBtn.click();
                 await returnOnChange(moreBtn, {childList: false, subtree: false, attributes: true});
             }
-            description = descInfo.innerHTML.split('<')[0].substring(0,50).trimEnd();
+            description = '_' + descInfo.innerHTML.split('<')[0].substring(0,50).trimEnd();
         }
     }
 
-    let file = ' - ' + mediaURL.split('?')[0].split('/').slice(-1)[0].split('.')[0].split('-')[0];
-    let itemNum = appendNum > 0 ? `_${appendNum}` : '';
-    return username + '_' + date + '_' + description + itemNum + file;
+    let file = mediaURL.split('?')[0].split('/').slice(-1)[0].split('.')[0].split('-')[0];
+    if(appendNum > 0)
+    {
+        let fileOG = mediaURLOG.split('?')[0].split('/').slice(-1)[0].split('.')[0].split('-')[0];
+        file =`${fileOG}_${appendNum}_${file}`;
+    }
+
+    return username + '_' + date + description + ' - ' + file;
 }
 
 class Downloader
@@ -432,22 +405,22 @@ class Downloader
         let curItem = this.getCurIndex();
         let contentSrc = this.urls[curItem];
         let appendNum = this.urls.length > 1 ? curItem + 1 : -1;
-        let filename = await getFilenameFromMetaData(this.metaData, contentSrc, appendNum);
+        let filename = await getFilenameFromMetaData(this.metaData, contentSrc, this.urls[0], appendNum);
         download(contentSrc, filename);
         this.player.querySelector('.GalleryGifNav > button[aria-label*="next"]')?.click();
     };
 
-    constructor(player, sideBar, metaData)
+    constructor(player, sideBar, tapTrack, metaData)
     {
         this.player = player;
         this.curItem = -1;
         this.metaData = metaData;
-        let tapTrack = player.querySelector('.TapTracker');
 
         if(player.className.includes('Player_isGallery'))
         {
             let gallery = tapTrack.querySelector('.GalleryGif .swiper-wrapper');
             if(!gallery) { return; }
+
             this.gallery = gallery;
 
             let swipes = gallery.querySelectorAll('.swiper-slide');
@@ -471,14 +444,15 @@ class Downloader
                 this.urls = [image.src];
             }
         }
-        else if (player.className.includes('Player_isVideo'))
+        else if (player.className.includes('Player_isVideo') || player.className.includes('routeWrapper'))
         {
             let video = tapTrack.querySelector('video');
             if(video)
             {
                 this.curItem = 0;
                 this.urls = [video?.src];
-                let qualBtn = sideBar.querySelector('.QualityButton > svg');
+                let qualBtn = sideBar.querySelector('.QualityButton > svg, .gifQuality');
+
                 if(qualBtn != null && !video?.src.includes('-mobile.'))
                 {
                     qualBtn.innerHTML = hdSVGPaths;
@@ -497,7 +471,10 @@ class Downloader
         dlBtn.className = "rgDlBtn";
 
         dlWrap.appendChild(dlBtn);
-        sideBar.firstElementChild.appendChild(dlWrap);
+        if(sideBar.className.includes('buttons')) {
+            dlWrap.className = 'button';
+            sideBar.appendChild(dlWrap); }
+        else { sideBar.firstElementChild.appendChild(dlWrap); }
 
         dlBtn.innerHTML = dlSVG;
 
@@ -509,13 +486,14 @@ class Downloader
 async function addDownloadButton(mediaWrapper, sideBar, metaData)
 {
     let content = await awaitElem(mediaWrapper, ".Player-BackdropWrap > img, video");
-    let tapper = await awaitElem(mediaWrapper, '.TapTracker');
+    let tapper = await awaitElem(mediaWrapper, '.TapTracker, .embeddedPlayer a[href^="/watch/"]');
+
     if(metaData == null)
     {
-        metaData = await awaitElem(sideBar.parentElement, '.Player-MetaInfo');
+        metaData = await awaitElem(mediaWrapper, '.Player-MetaInfo,.userInfo');
     }
 
-    new Downloader(mediaWrapper, sideBar, metaData);
+    new Downloader(mediaWrapper, sideBar, tapper, metaData);
 }
 
 function download(url, filename)
