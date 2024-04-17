@@ -9,7 +9,7 @@
 // @supportURL https://github.com/Invertex/RedGifs-AutoHD
 // @updateURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
 // @downloadURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
-// @version 2.19
+// @version 2.22
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
 // @match *://*.redgifs.com/*
@@ -217,7 +217,6 @@ if (!isGM)
                         let content = JSON.parse(e.target.response);
 
                         if(content == null) { return; }
-console.log(content);
                         if(content.gif != null)
                         {
                             processMediaEntry(content.gif);
@@ -370,84 +369,153 @@ async function processFeedEntry(mediaWrapper)
     });
 }
 
-async function getFilenameFromMetaData(metaData, videoUrl)
+async function getFilenameFromMetaData(metaData, mediaURL, appendNum)
 {
     let username = "";
     let date = "";
     let description = "";
-    let link = metaData.querySelector('.UserInfo-UserLink');
-    let followBtn = metaData.querySelector('.UserInfo-FollowBtn');
-    let dateInfo = metaData.querySelector('.UserInfo-Date');
-    let descInfo = metaData.querySelector('.UserInfo-Description');
 
-    if(link != null) { username = link.href.split('/').slice(-1)[0]; }
-    else if (followBtn != null) { username = followBtn.title; }
-
-    if(dateInfo != null)
+    if(metaData != null)
     {
-        let datey = new Date(dateInfo.innerText);
-        date = datey.toISOString().split('T')[0];
+        let link = metaData.querySelector('.UserInfo-UserLink');
+        let followBtn = metaData.querySelector('.UserInfo-FollowBtn');
+        let dateInfo = metaData.querySelector('.UserInfo-Date');
+        let descInfo = metaData.querySelector('.UserInfo-Description');
+
+        if(link != null) { username = link.href.split('/').slice(-1)[0]; }
+        else if (followBtn != null) { username = followBtn.title; }
+
+        if(dateInfo != null)
+        {
+            let datey = new Date(dateInfo.innerText);
+            date = datey.toISOString().split('T')[0];
+        }
+
+        if(descInfo)
+        {
+            let moreBtn = descInfo.querySelector('button[aria-label*="more"]');
+
+            if(moreBtn != null)
+            {
+                moreBtn.click();
+                await returnOnChange(moreBtn, {childList: false, subtree: false, attributes: true});
+            }
+            description = descInfo.innerHTML.split('<')[0].substring(0,50).trimEnd();
+        }
     }
 
-    if(descInfo) {
-        let moreBtn = descInfo.querySelector('button[aria-label*="more"]');
+    let file = ' - ' + mediaURL.split('?')[0].split('/').slice(-1)[0].split('.')[0].split('-')[0];
+    let itemNum = appendNum > 0 ? `_${appendNum}` : '';
+    return username + '_' + date + '_' + description + itemNum + file;
+}
 
-        if(moreBtn != null) {
-            moreBtn.click();
-            await returnOnChange(moreBtn, {childList: false, subtree: false, attributes: true});
+class Downloader
+{
+    getCurIndex = function()
+    {
+        if(this.urls.length > 1 && this?.gallery != null)
+        {
+            let swipes = this.gallery.querySelectorAll('.swiper-slide');
+            for(let i = 0; i < swipes.length; i++)
+            {
+                if(swipes[i].className.includes('swiper-slide-active'))
+                {
+                    return i;
+                }
+            }
         }
-        description = descInfo.innerHTML.split('<')[0].substring(0,50) + ' - '; }
+        return this.curItem;
+    }
 
-    let file = videoUrl.split('?')[0].split('/').slice(-1)[0].split('.')[0];
+    async download()
+    {
+        let curItem = this.getCurIndex();
+        let contentSrc = this.urls[curItem];
+        let appendNum = this.urls.length > 1 ? curItem + 1 : -1;
+        let filename = await getFilenameFromMetaData(this.metaData, contentSrc, appendNum);
+        download(contentSrc, filename);
+        this.player.querySelector('.GalleryGifNav > button[aria-label*="next"]')?.click();
+    };
 
-    return username + '_' + date + '_' + description + file;
+    constructor(player, sideBar, metaData)
+    {
+        this.player = player;
+        this.curItem = -1;
+        this.metaData = metaData;
+        let tapTrack = player.querySelector('.TapTracker');
+
+        if(player.className.includes('Player_isGallery'))
+        {
+            let gallery = tapTrack.querySelector('.GalleryGif .swiper-wrapper');
+            if(!gallery) { return; }
+            this.gallery = gallery;
+
+            let swipes = gallery.querySelectorAll('.swiper-slide');
+
+            this.urls = new Array(swipes.length);
+            for(let i = 0; i < swipes.length; i++)
+            {
+                this.urls[i] = swipes[i].querySelector('video,img')?.src;
+                if(swipes[i].className.includes('swiper-slide-active'))
+                {
+                    this.curItem = i;
+                }
+            }
+        }
+        else if (player.className.includes('Player_isImage'))
+        {
+            let image = tapTrack.querySelector('.ImageGif > img');
+            if(image)
+            {
+                this.curItem = 0;
+                this.urls = [image.src];
+            }
+        }
+        else if (player.className.includes('Player_isVideo'))
+        {
+            let video = tapTrack.querySelector('video');
+            if(video)
+            {
+                this.curItem = 0;
+                this.urls = [video?.src];
+                let qualBtn = sideBar.querySelector('.QualityButton > svg');
+                if(qualBtn != null && !video?.src.includes('-mobile.'))
+                {
+                    qualBtn.innerHTML = hdSVGPaths;
+                    let parent = qualBtn.parentElement;
+                    parent.className = parent.className.replace(' sd', ' hd');
+                }
+            }
+        }
+
+        if(this.curItem < 0) { return; }
+
+        let dlWrap = document.createElement('div');
+        dlWrap.className = 'SideBar-Item';
+
+        let dlBtn = document.createElement("button");
+        dlBtn.className = "rgDlBtn";
+
+        dlWrap.appendChild(dlBtn);
+        sideBar.firstElementChild.appendChild(dlWrap);
+
+        dlBtn.innerHTML = dlSVG;
+
+        dlBtn.onclick = () => this.download();
+    }
+
 }
 
 async function addDownloadButton(mediaWrapper, sideBar, metaData)
 {
-    let contentSrc = null;
-
-    if(mediaWrapper.className.includes('Player_isImage'))
-    {
-        let img = await awaitElem(mediaWrapper, ".Player-BackdropWrap > img");
-        contentSrc = img.src;
-    }
-    else
-    {
-        let video = await awaitElem(mediaWrapper, "video");
-
-        let qualBtn = sideBar.querySelector('.QualityButton > svg');
-        if(qualBtn != null && !video.src.includes('-mobile.'))
-        {
-            qualBtn.innerHTML = hdSVGPaths;
-            let parent = qualBtn.parentElement;
-            parent.className = parent.className.replace(' sd', ' hd');
-            contentSrc = video.src;
-        }
-    }
+    let content = await awaitElem(mediaWrapper, ".Player-BackdropWrap > img, video");
+    let tapper = await awaitElem(mediaWrapper, '.TapTracker');
     if(metaData == null)
     {
         metaData = await awaitElem(sideBar.parentElement, '.Player-MetaInfo');
     }
 
-    if(contentSrc === null) { return; }
-
-    let dlWrap = document.createElement('div');
-    dlWrap.className = 'SideBar-Item';
-
-    let dlBtn = document.createElement("button");
-    dlBtn.className = "rgDlBtn";
-
-    dlWrap.appendChild(dlBtn);
-    sideBar.firstElementChild.appendChild(dlWrap);
-
-    dlBtn.innerHTML = dlSVG;
-
-    dlBtn.onclick = async function()
-    {
-        let filename = metaData != null ? await getFilenameFromMetaData(metaData, contentSrc) : contentSrc.split('?')[0].split('/').slice(-1)[0].split('.')[0];
-        download(contentSrc, filename);
-    };
+    new Downloader(mediaWrapper, sideBar, metaData);
 }
 
 function download(url, filename)
