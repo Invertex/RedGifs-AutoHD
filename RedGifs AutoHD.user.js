@@ -9,7 +9,7 @@
 // @supportURL https://github.com/Invertex/RedGifs-AutoHD
 // @updateURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
 // @downloadURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
-// @version 2.24
+// @version 2.25
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
 // @match *://*.redgifs.com/*
@@ -171,7 +171,6 @@ const hdSVGPaths = '<path fill-rule="evenodd" clip-rule="evenodd" d="M1.16712 2.
          }
     }
 
-    //  if(!window.location.href.includes("//v3.")) { return; }
     XMLHttpRequest.prototype.open = function (method, url)
     {
 
@@ -222,7 +221,7 @@ const hdSVGPaths = '<path fill-rule="evenodd" clip-rule="evenodd" d="M1.16712 2.
         return;
     }
 
-    const root = document.body;
+    const root = await awaitElem(document, "body");
 
     if(root != null && !addHasModifiedClass(root))
     {
