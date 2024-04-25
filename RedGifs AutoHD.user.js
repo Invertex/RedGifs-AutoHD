@@ -9,7 +9,7 @@
 // @supportURL https://github.com/Invertex/RedGifs-AutoHD
 // @updateURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
 // @downloadURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
-// @version 2.25
+// @version 2.26
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
 // @match *://*.redgifs.com/*
@@ -87,9 +87,24 @@ GM_addStyle(`infinite-scroll-component {
 .SideBar-Item:has(img[alt^="Live site"]) {
   display: none !important;
 }
+/* CUSTOM BUTTONS */
 .rgDlBtn {
   background-color: transparent;
   border: none;
+}
+.rgDlBtn[disabled] {
+  pointer-events: none !important;
+}
+.rgDlBtn[disabled] > .rgDlSVG {
+  pointer-events: none !important;
+  background-color: rgba(143, 44, 242, 0.5);
+  border-radius: 12px;
+  animation-iteration-count: infinite;
+  animation-duration: 2s;
+  animation-name: dl-animation;
+}
+.rgDlBtn[disabled] > .rgDlSVG > path {
+    fill: rgba(255,255,255,0.2);
 }
 .rgDlSVG:hover {
   background-color: rgba(143, 44, 242, 0.5);
@@ -98,6 +113,25 @@ GM_addStyle(`infinite-scroll-component {
 .rgDlSVG:focus {
   padding-top: 3px;
   padding-bottom: 3px;
+}
+@keyframes dl-animation
+{
+    0%
+    {
+        background-color: cyan;
+    }
+    33%
+    {
+        background-color: magenta;
+    }
+    66%
+    {
+        background-color: yellow;
+    }
+    100%
+    {
+        background-color: cyan;
+    }
 }
 .nicheListWidget > .rows {
   min-height: 0px !important;
@@ -383,32 +417,6 @@ async function getFilenameFromMetaData(metaData, mediaURL, mediaURLOG, appendNum
 
 class Downloader
 {
-    getCurIndex = function()
-    {
-        if(this.urls.length > 1 && this?.gallery != null)
-        {
-            let swipes = this.gallery.querySelectorAll('.swiper-slide');
-            for(let i = 0; i < swipes.length; i++)
-            {
-                if(swipes[i].className.includes('swiper-slide-active'))
-                {
-                    return i;
-                }
-            }
-        }
-        return this.curItem;
-    }
-
-    async download()
-    {
-        let curItem = this.getCurIndex();
-        let contentSrc = this.urls[curItem];
-        let appendNum = this.urls.length > 1 ? curItem + 1 : -1;
-        let filename = await getFilenameFromMetaData(this.metaData, contentSrc, this.urls[0], appendNum);
-        download(contentSrc, filename);
-        this.player.querySelector('.GalleryGifNav > button[aria-label*="next"]')?.click();
-    };
-
     constructor(player, sideBar, tapTrack, metaData)
     {
         this.player = player;
@@ -478,8 +486,35 @@ class Downloader
         dlBtn.innerHTML = dlSVG;
 
         dlBtn.onclick = () => this.download();
+        this.dlBtn = dlBtn;
     }
 
+    getCurIndex = function()
+    {
+        if(this.urls.length > 1 && this?.gallery != null)
+        {
+            let swipes = this.gallery.querySelectorAll('.swiper-slide');
+            for(let i = 0; i < swipes.length; i++)
+            {
+                if(swipes[i].className.includes('swiper-slide-active'))
+                {
+                    return i;
+                }
+            }
+        }
+        return this.curItem;
+    }
+
+    async download()
+    {
+        this.dlBtn.setAttribute('disabled','');
+        let curItem = this.getCurIndex();
+        let contentSrc = this.urls[curItem];
+        let appendNum = this.urls.length > 1 ? curItem + 1 : -1;
+        let filename = await getFilenameFromMetaData(this.metaData, contentSrc, this.urls[0], appendNum);
+        downloadURL(contentSrc, filename, ()=> { this.dlBtn.removeAttribute('disabled'); });
+        this.player.querySelector('.GalleryGifNav > button[aria-label*="next"]')?.click();
+    };
 }
 
 async function addDownloadButton(mediaWrapper, sideBar, metaData)
@@ -495,7 +530,7 @@ async function addDownloadButton(mediaWrapper, sideBar, metaData)
     new Downloader(mediaWrapper, sideBar, tapper, metaData);
 }
 
-function download(url, filename)
+function downloadURL(url, filename, onFinish)
 {
     filename = filename.replace(/[\\/:*?".<>|]/g, '').trim(); //Sanitize filename
 
@@ -503,7 +538,9 @@ function download(url, filename)
     {
         name: filename,
         url: url,
-        onload: function () { /*LogMessage(`Downloaded ${url}!`);*/ }
+        onload: onFinish,
+        onerror: onFinish,
+        ontimeout: onFinish
     });
 }
 
