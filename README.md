@@ -1,6 +1,13 @@
 # RedGifs-AutoHD (Formerly Gfycat-AutoHD, but that site has been shut down)
 Automatically changes ~~GfyCat~~/RedGifs videos to HD mode, improves page layout to use width more and strips adverts.</br>
 
+Also includes a download button for content that gives organizeable file-names, for example:<br/>
+  `someUser_2024-02-24_Did something fun today - CheeseCapyBara.mp4`<br/>
+Or if it's a multi-element post:<br/>
+  `someUser_2024-02-24_Did something fun today - CheeseCapyBara_1_RiverCrashingBrunch.mp4`<br/>
+  where "1" is what position in the list that item was.<br/>
+
+
 Should work on RedGifs embeds on other websites as well, including Reddit.
 
 # Installation
