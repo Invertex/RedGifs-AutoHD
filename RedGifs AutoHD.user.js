@@ -9,7 +9,7 @@
 // @supportURL https://github.com/Invertex/RedGifs-AutoHD
 // @updateURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
 // @downloadURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
-// @version 2.26
+// @version 2.28
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
 // @match *://*.redgifs.com/*
@@ -35,7 +35,11 @@ const autoplayButtonSelector = "div.upnext-control div.switch input[type='checkb
 const modifiedAttr = "gfyHD";
 
 
-GM_addStyle(`infinite-scroll-component {
+GM_addStyle(`
+body.gfyHD {
+ overflow: auto !important;
+}
+infinite-scroll-component {
   overflow: visible !important;
 }
 .skyWrapper > .side, skyWrapper > .side {
@@ -137,7 +141,7 @@ GM_addStyle(`infinite-scroll-component {
   min-height: 0px !important;
 }
 .skyWrapper > .middle {
-  width: 80% !important;
+  width: 70% !important;
 }
 /* OUTTER FEED CONTAINERS */
 
@@ -148,14 +152,14 @@ GM_addStyle(`infinite-scroll-component {
 .page.narrow,
 .page.wide
 {
+   min-width: 95% !important;
   max-width: 100% !important;
-  width: 70% !important;
 }
 /* FEED CONTAINER */
 .page > .watchFeed, .page > .center,
 .middle > .homePage {
- max-width: 80% !important;
- width: 80% !important;
+ max-width: 100% !important;
+min-width: 95% !important;
 }
 
 /* MAIN FEED */
@@ -163,14 +167,13 @@ GM_addStyle(`infinite-scroll-component {
 .fullScreen .watchPage .previewFeed,
 .fullScreen .watchPage .previewFeed1
 {
-  width: 100% !important;
-  min-width: 100% !important;
+  min-width: 95% !important;
   max-width: 100% !important;
 }
 /* FEED ITEMS */
 .previewFeed > div {
 width: auto !important;
-max-width: 90% !important;
+max-width: calc(100% - 58px) !important;
 }
 `);
 
