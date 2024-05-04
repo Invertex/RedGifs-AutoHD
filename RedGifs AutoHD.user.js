@@ -9,7 +9,7 @@
 // @supportURL https://github.com/Invertex/RedGifs-AutoHD
 // @updateURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
 // @downloadURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
-// @version 2.28
+// @version 2.29
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
 // @match *://*.redgifs.com/*
@@ -408,14 +408,17 @@ async function getFilenameFromMetaData(metaData, mediaURL, mediaURLOG, appendNum
         }
     }
 
-    let file = mediaURL.split('?')[0].split('/').slice(-1)[0].split('.')[0].split('-')[0];
+    let parts = mediaURL.split('?')[0].split('/').slice(-1)[0].split('.');
+    let file = parts[0].split('-')[0];
+    let ext = parts[1];
+
     if(appendNum > 0)
     {
         let fileOG = mediaURLOG.split('?')[0].split('/').slice(-1)[0].split('.')[0].split('-')[0];
         file =`${fileOG}_${appendNum}_${file}`;
     }
 
-    return username + '_' + date + description + ' - ' + file;
+    return username + '_' + date + description + ' - ' + file + '.' + ext;
 }
 
 class Downloader
@@ -535,7 +538,7 @@ async function addDownloadButton(mediaWrapper, sideBar, metaData)
 
 function downloadURL(url, filename, onFinish)
 {
-    filename = filename.replace(/[\\/:*?".<>|]/g, '').trim(); //Sanitize filename
+    filename = filename.replace(/[\\/:*?"<>|]/g, '').trim(); //Sanitize filename
 
     GM_download(
     {
