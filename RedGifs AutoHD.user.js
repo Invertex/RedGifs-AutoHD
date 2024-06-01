@@ -9,7 +9,7 @@
 // @supportURL https://github.com/Invertex/RedGifs-AutoHD
 // @updateURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
 // @downloadURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
-// @version 2.29
+// @version 2.30
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
 // @match *://*.redgifs.com/*
@@ -348,7 +348,8 @@ async function processFeedEntry(mediaWrapper)
         mediaWrapper.style.width = perc + "%";
     }
 
-    let sidebar = await awaitElem(mediaWrapper, ".Player-SideBarWrap");
+    let sidebar = await awaitElem(mediaWrapper, "div:has(> ul.SideBar)");
+
     await addDownloadButton(mediaWrapper, sidebar);
 
     watchForAddedNodes(mediaWrapper, function(root, addedNodes)
@@ -357,7 +358,7 @@ async function processFeedEntry(mediaWrapper)
         let addedMetaData = null;
 
         addedNodes.forEach((nodey) => {
-            if(nodey.className.includes('Player-SideBarWrap'))
+            if(nodey.className.includes('-SideBarWrap'))
             {
                 addedSideBar = nodey;
             }
@@ -423,13 +424,9 @@ async function getFilenameFromMetaData(metaData, mediaURL, mediaURLOG, appendNum
 
 class Downloader
 {
-    constructor(player, sideBar, tapTrack, metaData)
+    setup = async function (player, sideBar, tapTrack, metaData)
     {
-        this.player = player;
-        this.curItem = -1;
-        this.metaData = metaData;
-
-        if(player.className.includes('Player_isGallery'))
+         if(player.className.includes('GifPreview_isGallery') || player.className.includes('Player_isGallery'))
         {
             let gallery = tapTrack.querySelector('.GalleryGif .swiper-wrapper');
             if(!gallery) { return; }
@@ -448,7 +445,7 @@ class Downloader
                 }
             }
         }
-        else if (player.className.includes('Player_isImage'))
+        else if (player.className.includes('GifPreview_isImage') || player.className.includes('Player_isImage'))
         {
             let image = tapTrack.querySelector('.ImageGif > img');
             if(image)
@@ -457,15 +454,19 @@ class Downloader
                 this.urls = [image.src];
             }
         }
-        else if (player.className.includes('Player_isVideo') || player.className.includes('routeWrapper'))
+        else if (player.className.includes('GifPreview_isVideo') || player.className.includes('Player_isVideo') || player.className.includes('routeWrapper'))
         {
-            let video = tapTrack.querySelector('video');
+            let video = await awaitElem(tapTrack, 'video');
+            while(!video.src.includes("?expires"))
+            {
+                await returnOnChange(video, {childList: false, subtree: false, attributes: true}, function(){});
+            }
             if(video)
             {
                 this.curItem = 0;
                 this.urls = [video?.src];
-                let qualBtn = sideBar.querySelector('.QualityButton > svg, .gifQuality');
 
+                let qualBtn = sideBar.querySelector('.QualityButton > svg, .gifQuality');
                 if(qualBtn != null && !video?.src.includes('-mobile.'))
                 {
                     qualBtn.innerHTML = hdSVGPaths;
@@ -476,7 +477,6 @@ class Downloader
         }
 
         if(this.curItem < 0) { return; }
-
         let dlWrap = document.createElement('div');
         dlWrap.className = 'SideBar-Item';
 
@@ -495,9 +495,19 @@ class Downloader
         this.dlBtn = dlBtn;
     }
 
+    constructor(player, sideBar, tapTrack, metaData)
+    {
+        this.player = player;
+        this.curItem = -1;
+        this.metaData = metaData;
+
+        this.setup(player, sideBar, tapTrack, metaData);
+    }
+
     getCurIndex = function()
     {
-        if(this.urls.length > 1 && this?.gallery != null)
+        if(this.urls.length <= 1) { return 0; }
+        if(this?.gallery != null)
         {
             let swipes = this.gallery.querySelectorAll('.swiper-slide');
             for(let i = 0; i < swipes.length; i++)
@@ -525,12 +535,13 @@ class Downloader
 
 async function addDownloadButton(mediaWrapper, sideBar, metaData)
 {
-    let content = await awaitElem(mediaWrapper, ".Player-BackdropWrap > img, video");
+    let content = await awaitElem(mediaWrapper, ".Player-BackdropWrap > img,.GifPreview-BackdropWrap > img, video");
+
     let tapper = await awaitElem(mediaWrapper, '.TapTracker, .embeddedPlayer a[href^="/watch/"]');
 
     if(metaData == null)
     {
-        metaData = await awaitElem(mediaWrapper, '.Player-MetaInfo,.userInfo');
+        metaData = await awaitElem(mediaWrapper, '.GifPreview-MetaInfo,.Player-MetaInfo,.userInfo');
     }
 
     new Downloader(mediaWrapper, sideBar, tapper, metaData);
@@ -690,12 +701,15 @@ function returnOnChange(target, obsArguments, resolve)
      return new Promise(resolve => watchForChange(target, obsArguments, resolve));
 }
 
-function watchForChange(root, obsArguments, onChange)
+function watchForChange(root, obsArguments, onChange, stopAfter = false)
 {
     const rootObserver = new MutationObserver(function(mutations) {
         rootObserver.disconnect();
         mutations.forEach((mutation) => onChange(root, mutation));
-        rootObserver.observe(root, obsArguments);
+        if(stopAfter != true)
+        {
+            rootObserver.observe(root, obsArguments);
+        }
     });
 
     rootObserver.observe(root, obsArguments);
