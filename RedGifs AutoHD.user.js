@@ -9,7 +9,7 @@
 // @supportURL https://github.com/Invertex/RedGifs-AutoHD
 // @updateURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
 // @downloadURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
-// @version 2.30
+// @version 2.31
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
 // @match *://*.redgifs.com/*
@@ -17,7 +17,9 @@
 // @connect *.gifdeliverynetwork.com
 // @connect *.cdn.embedly.com
 // @connect *.api.redgifs.com
+// @grant unsafeWindow
 // @grant GM.xmlHttpRequest
+// @grant GM_xmlhttpRequest
 // @grant GM_addStyle
 // @grant GM_download
 // @run-at document-start
@@ -186,67 +188,66 @@ const hdSVGPaths = '<path fill-rule="evenodd" clip-rule="evenodd" d="M1.16712 2.
       '0 2.51909 1.16712C2.00029 1.54405 1.54405 2.00029 1.16712 2.51909ZM10.0756 15V6.66H8.70763V10.236H4.78363V6.66H3.41563V15H4.78363V11.352H8.70763V15H10.0756ZM16.9286 7.176C16.2646 6.832 15.4886 6.66 14.6006 6.66H11.8766V15H14.6006C15.4886 15 16.2646 14.836 16.9286 '+
       '14.508C17.6006 14.172 18.1166 13.692 18.4766 13.068C18.8446 12.444 19.0286 11.708 19.0286 10.86C19.0286 10.012 18.8446 9.272 18.4766 8.64C18.1166 8 17.6006 7.512 16.9286 7.176ZM16.8446 13.092C16.3246 13.62 15.5766 13.884 14.6006 13.884H13.2446V7.776H14.6006C15.5766 '+
       '7.776 16.3246 8.048 16.8446 8.592C17.3646 9.136 17.6246 9.892 17.6246 10.86C17.6246 11.82 17.3646 12.564 16.8446 13.092Z" fill="white"></path>';
-
+const processMediaEntry = function(media)
+{
+    if(media.urls != null && media.urls.sd != null && media.urls.hd != null)
+    {
+        if(media.hls != null) { media.hls = false; }
+        let hdurl = media.urls.hd;
+        media.urls.sd = hdurl;
+        if(!hdurl.includes('.mp4?'))
+        {
+            media.urls.thumbnail = hdurl;
+            media.urls.poster = hdurl;
+        }
+    }
+};
 
 /** Global persistence End**/
 
 //Intercept request for video information and replace SD with HD content
-(function (open)
- {
-    const processMediaEntry = function(media)
+var openOpen = unsafeWindow.XMLHttpRequest.prototype.open;
+unsafeWindow.XMLHttpRequest.prototype.open = exportFunction(function(method, url)
+{
+    if (url.includes('/v2/') || url.includes('/v3/') || url.includes('/v1/'))
     {
-         if(media.urls != null && media.urls.sd != null && media.urls.hd != null)
-         {
-             if(media.hls != null) { media.hls = false; }
-             let hdurl = media.urls.hd;
-             media.urls.sd = hdurl;
-             if(!hdurl.includes('.mp4?'))
-             {
-                 media.urls.thumbnail = hdurl;
-                 media.urls.poster = hdurl;
-             }
-         }
-    }
-
-    XMLHttpRequest.prototype.open = function (method, url)
-    {
-
-        if (url.includes('/v2/') || url.includes('/v3/') || url.includes('/v1/'))
-        {
-            this.addEventListener('readystatechange', async function (e)
-            {
-                if (this.readyState === 4)
-                {
-                    try
-                    {
-                        let content = JSON.parse(e.target.response);
-
-                        if(content == null) { return; }
-                        if(content.gif != null)
-                        {
-                            processMediaEntry(content.gif);
-                        }
-                        else if(content.gifs != null)
-                        {
-                            let gifs = content.gifs;
-
-                            let gifCnt = content.gifs.length;
-                            for(let i = 0; i < gifCnt; i++)
-                            {
-                                processMediaEntry(gifs[i]);
-                            }
-                        }
-
-                        Object.defineProperty(this, 'responseText', { writable: true });
-                        this.responseText = JSON.stringify(content);
-                    } catch(e){}
-                }
-            });
+        if(url.includes('/gifs/boost')) {
+        return;
         }
+        this.addEventListener('readystatechange', function (e)
+        {
+            if (this.readyState === 4)
+            {
+                try
+                {
+                    let content = JSON.parse(e.target.response);
 
-        open.apply(this, arguments);
-    };
-})(XMLHttpRequest.prototype.open);
+                    if(content == null) { return; }
+                    if(content.gif != null)
+                    {
+                        processMediaEntry(content.gif);
+                    }
+                    else if(content.gifs != null)
+                    {
+                        let gifs = content.gifs;
+                        let gifCnt = content.gifs.length;
+                        for(let i = 0; i < gifCnt; i++)
+                        {
+                            processMediaEntry(gifs[i]);
+                        }
+                    }
+
+                    Object.defineProperty(this, 'responseText', { writable: true });
+                    Object.defineProperty(this, 'response', { writable: true });
+                    this.response = this.responseText = JSON.stringify(content);
+                } catch(e){}
+            }
+        });
+    }
+    openOpen.call(this, method, url);
+}, unsafeWindow);
+
+
 
 (async function()
 {
