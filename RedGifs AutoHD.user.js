@@ -475,6 +475,9 @@ class Downloader
                     parent.className = parent.className.replace(' sd', ' hd');
                 }
             }
+            // video.src might have URL or previous video when scrolling.
+            // Keep tapTrack to get fresh URL when requested.
+            this.video = tapTrack;
         }
 
         if(this.curItem < 0) { return; }
@@ -528,9 +531,17 @@ class Downloader
         let curItem = this.getCurIndex();
         let contentSrc = this.urls[curItem];
         let appendNum = this.urls.length > 1 ? curItem + 1 : -1;
-        let filename = await getFilenameFromMetaData(this.metaData, contentSrc, this.urls[0], appendNum);
-        downloadURL(contentSrc, filename, ()=> { this.dlBtn.removeAttribute('disabled'); });
-        this.player.querySelector('.GalleryGifNav > button[aria-label*="next"]')?.click();
+        if (this.video != null) {
+          // This means curItem = 0, appendNum = -1
+          contentSrc = this.video.querySelector('video')?.src;
+        }
+        if (contentSrc != null) {
+          let filename = await getFilenameFromMetaData(this.metaData, contentSrc, this.urls[0], appendNum);
+          downloadURL(contentSrc, filename, ()=> { this.dlBtn.removeAttribute('disabled'); });
+          this.player.querySelector('.GalleryGifNav > button[aria-label*="next"]')?.click();
+        } else {
+          alert("error: no URL!");
+        }
     };
 }
 
