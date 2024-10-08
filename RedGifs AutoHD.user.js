@@ -41,6 +41,29 @@ GM_addStyle(`
 body.gfyHD {
  overflow: auto !important;
 }
+.GifPreview-MetaInfo {
+ opacity: 4%;
+}
+.GifPreview-MetaInfo:hover, .embeddedPlayer > .logo:hover, .embeddedPlayer > .buttons:hover, .embeddedPlayer > .userInfo:hover {
+ opacity: 90%;
+}
+#scrollableDiv:has(> .routeWrapper > .embeddedPlayer):hover {
+ .embeddedPlayer > .logo, .embeddedPlayer > .userInfo { opacity: 100%; }
+ .embeddedPlayer > .buttons { opacity: 100%; }
+}
+.embeddedPlayer > .logo, .embeddedPlayer > .userInfo { opacity: 15%; }
+.embeddedPlayer > .buttons { opacity: 20%; }
+
+.seek-slider .track .main:hover {
+ opacity: 100%;
+ .seek-slider .track .main .inner-seek-block {
+   height: 8px !important;
+ }
+}
+.seek-slider .track .main { opacity: 30%; }
+ .seek-slider .track .main .inner-seek-block {
+   height: 4px !important;
+ }
 infinite-scroll-component {
   overflow: visible !important;
 }
@@ -98,10 +121,10 @@ infinite-scroll-component {
   background-color: transparent;
   border: none;
 }
-.rgDlBtn[disabled] {
+.rgDlBtn[downloading],.rgDlBtn[disabled] {
   pointer-events: none !important;
 }
-.rgDlBtn[disabled] > .rgDlSVG {
+.rgDlBtn[downloading] > .rgDlSVG {
   pointer-events: none !important;
   background-color: rgba(143, 44, 242, 0.5);
   border-radius: 12px;
@@ -109,16 +132,25 @@ infinite-scroll-component {
   animation-duration: 2s;
   animation-name: dl-animation;
 }
-.rgDlBtn[disabled] > .rgDlSVG > path {
+.rgDlBtn[downloading] > .rgDlSVG > path,.rgDlBtn[disabled] > .rgDlSVG > path {
     fill: rgba(255,255,255,0.2);
 }
 .rgDlSVG:hover {
   background-color: rgba(143, 44, 242, 0.5);
   border-radius: 12px;
 }
+.rgDlSVG:hover {
+  background-color: rgba(200, 200, 200, 0.25);
+  border-radius: 12px;
+}
 .rgDlSVG:focus {
   padding-top: 3px;
   padding-bottom: 3px;
+}
+.rghd_sidebarwrap {
+  position: absolute;
+  right: -58px;
+  bottom: 20px;
 }
 @keyframes dl-animation
 {
@@ -183,11 +215,16 @@ const dlSVG = '<svg class="rgDlSVG" width="24" height="24" viewBox="0 0 24 24" f
       '0.1798801 -0.759765,0.5390626 V 17.886719 c 0,0.862037 -2.6e-4,1.723988 -0.457032,1.292969 L 5.1660156,14.007812 c -0.4567702,-0.431018 -1.9800328,0.287496 -1.21875,1.00586 l 6.6992184,5.603516 c 1.82708,1.43673 1.827215,1.43673 3.654297,0 L 21,15.013672 c 0.761283,'+
       '-0.718364 -0.609723,-1.580552 -1.21875,-1.00586 l -6.089844,5.171876 c -0.456769,0.431019 -0.457031,-0.430932 -0.457031,-1.292969 V 6.1054688 c 0,-0.3591825 -0.381078,-0.5390626 -0.761719,-0.5390626 z"></path></svg>';
 
+const linkSVG = `<svg class="rgDlSVG" xmlns="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" version="1.1" id="Layer_1" x="0px" y="0px" width="24" height="24" viewBox="0 0 512 512" enable-background="new 0 0 512 512" xml:space="preserve" data-google-analytics-opt-out="">
+<path fill="white" d="M459.654,233.373l-90.531,90.5c-49.969,50-131.031,50-181,0c-7.875-7.844-14.031-16.688-19.438-25.813  l42.063-42.063c2-2.016,4.469-3.172,6.828-4.531c2.906,9.938,7.984,19.344,15.797,27.156c24.953,24.969,65.563,24.938,90.5,0  l90.5-90.5c24.969-24.969,24.969-65.563,0-90.516c-24.938-24.953-65.531-24.953-90.5,0l-32.188,32.219  c-26.109-10.172-54.25-12.906-81.641-8.891l68.578-68.578c50-49.984,131.031-49.984,181.031,0  C509.623,102.342,509.623,183.389,459.654,233.373z M220.326,382.186l-32.203,32.219c-24.953,24.938-65.563,24.938-90.516,0  c-24.953-24.969-24.953-65.563,0-90.531l90.516-90.5c24.969-24.969,65.547-24.969,90.5,0c7.797,7.797,12.875,17.203,15.813,27.125  c2.375-1.375,4.813-2.5,6.813-4.5l42.063-42.047c-5.375-9.156-11.563-17.969-19.438-25.828c-49.969-49.984-131.031-49.984-181.016,0  l-90.5,90.5c-49.984,50-49.984,131.031,0,181.031c49.984,49.969,131.031,49.969,181.016,0l68.594-68.594  C274.561,395.092,246.42,392.342,220.326,382.186z"/>
+</svg>`;
+
 const hdSVGPaths = '<path fill-rule="evenodd" clip-rule="evenodd" d="M1.16712 2.51909C0 4.12549 0 6.41699 0 11C0 15.583 0 17.8745 1.16712 19.4809C1.54405 19.9997 2.00029 20.456 2.51909 '+
       '20.8329C4.12549 22 6.41699 22 11 22C15.583 22 17.8745 22 19.4809 20.8329C19.9997 20.456 20.456 19.9997 20.8329 19.4809C22 17.8745 22 15.583 22 11C22 6.41699 22 4.12549 20.8329 2.51909C20.456 2.00029 19.9997 1.54405 19.4809 1.16712C17.8745 0 15.583 0 11 0C6.41699 0 4.12549 '+
       '0 2.51909 1.16712C2.00029 1.54405 1.54405 2.00029 1.16712 2.51909ZM10.0756 15V6.66H8.70763V10.236H4.78363V6.66H3.41563V15H4.78363V11.352H8.70763V15H10.0756ZM16.9286 7.176C16.2646 6.832 15.4886 6.66 14.6006 6.66H11.8766V15H14.6006C15.4886 15 16.2646 14.836 16.9286 '+
       '14.508C17.6006 14.172 18.1166 13.692 18.4766 13.068C18.8446 12.444 19.0286 11.708 19.0286 10.86C19.0286 10.012 18.8446 9.272 18.4766 8.64C18.1166 8 17.6006 7.512 16.9286 7.176ZM16.8446 13.092C16.3246 13.62 15.5766 13.884 14.6006 13.884H13.2446V7.776H14.6006C15.5766 '+
       '7.776 16.3246 8.048 16.8446 8.592C17.3646 9.136 17.6246 9.892 17.6246 10.86C17.6246 11.82 17.3646 12.564 16.8446 13.092Z" fill="white"></path>';
+
 const processMediaEntry = function(media)
 {
     if(media.urls != null && media.urls.sd != null && media.urls.hd != null)
@@ -287,7 +324,7 @@ async function processMainSite(root)
     {
         const main = await awaitElem(root, 'main, .content-page, #root > div.nav');
 
-      if(!addHasModifiedClass(main))
+        if(!addHasModifiedClass(main))
         {
             let middle = await awaitElem(main, '.routeWrapper');
             if(!addHasModifiedClass(middle))
@@ -342,8 +379,11 @@ async function processFeedEntry(mediaWrapper)
     mediaWrapper.rghd = new MediaElem(mediaWrapper);
 }
 
-function getFilenameFromMetaData(metaData, mediaURL, mediaURLOG, appendNum)
+function getFilenameFromMetaData(metaData, mediaURLs, curItem)
 {
+    if(mediaURLs.length == 0) { return ""; }
+
+    let mediaURL = mediaURLs[curItem];
     let username = "";
     let date = "";
     let description = "";
@@ -385,10 +425,10 @@ function getFilenameFromMetaData(metaData, mediaURL, mediaURLOG, appendNum)
     let file = parts[0].split('-')[0];
     let ext = parts[1];
 
-    if(appendNum > 0)
+    if(mediaURLs.length > 1)
     {
-        let fileOG = mediaURLOG.split('?')[0].split('/').slice(-1)[0].split('.')[0].split('-')[0];
-        file =`${fileOG}_${appendNum}_${file}`;
+        let fileOG = mediaURLs[0].split('?')[0].split('/').slice(-1)[0].split('.')[0].split('-')[0];
+        file =`${fileOG}_${curItem + 1}_${file}`;
     }
     let filename = username + '_' + date + description + ' - ' + file + '.' + ext;
     return filename.replace(/[\\/]/g, '_').replace(/[:*<>|]/g, '-').replace(/[?"]/g, '').trim(); //Sanitize filename
@@ -396,254 +436,280 @@ function getFilenameFromMetaData(metaData, mediaURL, mediaURLOG, appendNum)
 
 class MediaElem
 {
+    urls = [];
+    curItem = -1;
+    gallery = null;
+    mediaWrapper = null;
+
+    applyStyling = function()
+    {
+        if(this.mediaWrapper.style.aspectRatio != "")
+        {
+            let aspect = this.mediaWrapper.style.aspectRatio.split('/');
+            let width = parseInt(aspect[0]) * 2.0;
+            let height = parseInt(aspect[1]) * 1.0;
+            if(width == null) {return; }
+            let perc = (width / height) * 100.0;
+            this.mediaWrapper.style.width = perc + "%";
+        }
+    };
+
+    update = async function()
+    {
+        this.sideBar = await awaitElem(this.mediaWrapper, "div:has(> ul.SideBar), .embeddedPlayer:has(>.userInfo) > div.buttons");
+        if(this.sideBar != null)
+        {
+            this.processSidebar();
+            let rghdSideBar = this.mediaWrapper.querySelector('.rghd_sidebarwrap');
+            if(rghdSideBar == null)
+            {
+                await this.createSideBar();
+            }
+        }
+
+    };
+
+    setup = async function()
+    {
+        await this.update();
+    };
+
+    createSideBar = async function()
+    {
+        //DOWNLOAD BUTTON
+        let dlWrap = document.createElement('li');
+        dlWrap.className = 'SideBar-Item';
+
+        this.dlBtn = document.createElement("button");
+        this.dlBtn.className = "rgDlBtn";
+        this.dlBtn.innerHTML = dlSVG;
+        this.dlBtn.title = "Download";
+        this.dlBtn.onclick = ()=> { this.download(); };
+        dlWrap.appendChild(this.dlBtn);
+
+        // COPY LINK BUTTON
+        let copyWrap = document.createElement('li');
+        copyWrap.className = 'SideBar-Item';
+
+        this.copyBtn = document.createElement("a");
+        this.copyBtn.className = "rgDlBtn";
+        this.copyBtn.innerHTML = linkSVG;
+        this.copyBtn.title = "File Link (if Download won't work, click this instead)";
+       // this.copyBtn.onclick = ()=> { this.download(); };
+        copyWrap.appendChild(this.copyBtn);
+
+
+
+        if(this.sideBar.className.includes('buttons')) {
+            //Embed player, just add it to existing static sidebar
+            dlWrap.className = 'button';
+            copyWrap.className = 'button';
+            this.sideBar.appendChild(dlWrap);
+            this.sideBar.appendChild(copyWrap);
+        }
+        else {
+            // Let's make our own sidebar, because redgifs does some really stupid re-use stuff
+            let sidebar = document.createElement('div');
+            this.rghdSideBar = sidebar;
+            sidebar.className = "rghd_sidebarwrap";
+            let sblist = document.createElement('ul');
+            sidebar.appendChild(sblist);
+            sblist.appendChild(dlWrap);
+            sblist.appendChild(copyWrap);
+            this.mediaWrapper.appendChild(sidebar);
+        }
+
+        this.dlBtn.disabled = true;
+        this.copyBtn.disabled = true;
+        await this.processContent();
+        this.dlBtn.disabled = false;
+        this.copyBtn.disabled = false;
+    };
+
+
+    processContent = async function()
+    {
+        //RedGifs does some stupid stuff with the video player, which can result in the video element having the ID of a previous video for a split second
+        // So we have to ensure to await until the video actually matches the ID for this post...
+        // Absolute nightmare tracking down why the script was getting the wrong url sometimes -_-"
+        let contentid = this.mediaWrapper.id;
+        contentid = contentid.substr(contentid.lastIndexOf('_') + 1).toLowerCase();
+
+        this.metaData = await awaitElem(this.mediaWrapper, '.GifPreview-MetaInfo,.Player-MetaInfo,.userInfo');
+
+        this.urls = [];
+
+        if(this.mediaWrapper.className.includes('GifPreview_isGallery') || this.mediaWrapper.className.includes('Player_isGallery'))
+        {
+            let gallery = await awaitElem(this.mediaWrapper,`.GalleryGif .swiper-wrapper`,
+                                           {childList: true, subtree: true, attributes: true});
+            if(!gallery) { return; }
+
+            gallery = gallery.parentElement;
+            let swipes = gallery.querySelectorAll('.swiper-slide');
+
+            for(let i = 0; i < swipes.length; i++)
+            {
+                this.urls.push(swipes[i].querySelector('video,img')?.src);
+                if(swipes[i].className.includes('swiper-slide-active'))
+                {
+                    this.curItem = i;
+                }
+            }
+        }
+        else if (this.mediaWrapper.className.includes('GifPreview_isImage') || this.mediaWrapper.className.includes('Player_isImage'))
+        {
+            this.content = await awaitElem(this.mediaWrapper, `.ImageGif > img.ImageGif-Thumbnail[src*=${contentid} i]`,
+                                       {childList: true, subtree: true, attributes: true, characterData: true, attributeOldValue: true});
+            if(this.content)
+            {
+                this.curItem = 0;
+                this.urls.push(this.content.src);
+            }
+        }
+        else if (this.mediaWrapper.className.includes('GifPreview_isVideo') || this.mediaWrapper.className.includes('Player_isVideo') || this.mediaWrapper.className.includes('routeWrapper'))
+        {
+            const video = await awaitElem(this.mediaWrapper, `video[src*=${contentid} i]`, {childList: true, subtree: true, attributes: true, characterData: true, attributeOldValue: true});
+            if(video)
+            {
+                this.curItem = 0;
+                this.urls.push(video.src);
+            }
+        }
+
+        if(this.urls.length > 0)
+        {
+            this.copyBtn.href = this.urls[0];
+            this.copyBtn.target = '_blank';
+            this.copyBtn.download = getFilenameFromMetaData(this.metaData, this.urls, 0);
+        }
+    };
+
+
+    processSidebar = function()
+    {
+        let qualBtn = this.sideBar.querySelector('.QualityButton > svg, .gifQuality');
+        if(qualBtn != null && !this.content?.src?.includes('-mobile.'))
+        {
+            qualBtn.innerHTML = hdSVGPaths;
+            let parent = qualBtn.parentElement;
+            parent.className = parent.className.replace(' sd', ' hd');
+        }
+    };
+
+    getCurIndex = function()
+    {
+        if(this.urls.length <= 1) { return 0; }
+
+        this.gallery = this.mediaWrapper.querySelector('.TapTracker .GalleryGif .swiper-wrapper');
+        if(this.gallery != null)
+        {
+            let swipes = this.gallery.querySelectorAll('.swiper-slide');
+            for(let i = 0; i < swipes.length; i++)
+            {
+                if(swipes[i].className.includes('swiper-slide-active'))
+                {
+                    return i;
+                }
+            }
+        }
+        return this.curItem;
+    };
+
+    download = function(e)
+    {
+        this.downloadBtnToggle(false);
+
+        if(this.curItem < 0) {
+            this.downloadBtnToggle(true);
+            return;
+        }
+        let curItem = this.getCurIndex();
+
+        let contentSrc = this.urls[curItem];
+
+        if (contentSrc != null) {
+            let filename = getFilenameFromMetaData(this.metaData, this.urls, curItem);
+
+            this.downloadURL(contentSrc, filename);
+            if(this.urls.length > 1)
+            {
+                let nextbtn = this.mediaWrapper.querySelector('.GalleryGifNav > button[aria-label*="next"]');
+                if(nextbtn && !nextbtn.hasAttribute('disabled'))
+                {
+                    nextbtn.click();
+                    this.curItem += 1;
+                }
+            }
+        }
+        else
+        {
+            alert("error: no URL!");
+            this.downloadBtnToggle(true);
+        }
+    };
+
+    downloadURL = function(url, filename)
+    {
+        const dl = GM_download({
+            url: url,
+            name: filename,
+            onload: () => { this.downloadSuccess(); },
+            onerror: (e) => { this.downloadFailed(e); },
+            ontimeout: (e) => { this.downloadFailed(e); }
+        });
+        // For some reason GM_download is failing for some downloads, but directly putting them in the URL bar is fine... So timeout for now.
+        window.setTimeout(()=> {
+            this.downloadBtnToggle(true);
+            dl.abort();
+        }, 32000);
+    };
+    downloadSuccess = function()
+    {
+        this.downloadBtnToggle(true);
+    };
+
+    downloadFailed = function(err)
+    {
+        console.log(err);
+        this.downloadBtnToggle(true);
+    };
+
+    downloadBtnToggle = function(enabled)
+    {
+        if(!enabled)
+        {
+            this.dlBtn.setAttribute('downloading','');
+        }
+        else
+        {
+            if(this.dlBtn.hasAttribute('downloading'))
+            {
+                this.dlBtn.removeAttribute('downloading');
+            }
+        }
+    };
+    copyBtnToggle = function(enabled)
+    {
+        if(!enabled)
+        {
+            this.copyBtn.setAttribute('downloading','');
+        }
+        else
+        {
+            if(this.copyBtn.hasAttribute('downloading'))
+            {
+                this.copyBtn.removeAttribute('downloading');
+            }
+        }
+    };
     constructor(mediaWrapper)
     {
+        this.urls = [];
         mediaWrapper.setAttribute('rghd','');
         mediaWrapper.rghd = this;
-
-        this.curItem = -1;
-        this.urls = null;
-        this.gallery = null;
         this.mediaWrapper = mediaWrapper;
 
-        this.update = async function()
-        {
-            this.content = await awaitElem(this.mediaWrapper, ".ImageGif > img.ImageGif-Thumbnail, video");
-            await awaitElem(this.mediaWrapper, '.TapTracker, .embeddedPlayer a[href^="/watch/"]');
-            this.metaData = await awaitElem(this.mediaWrapper, '.GifPreview-MetaInfo,.Player-MetaInfo,.userInfo');
-            this.sideBar = await awaitElem(this.mediaWrapper, "div:has(> ul.SideBar), .embeddedPlayer:has(>.userInfo) > div.buttons");
-            if(this.sideBar != null)
-            {
-                this.processSidebar();
-            }
-        };
-
-        this.setup = async function()
-        {
-            await this.update();
-            watchForAddedNodes(this.mediaWrapper, this.onAddedNodes);
-        };
-
-        this.applyStyling = function()
-        {
-            if(this.mediaWrapper.style.aspectRatio != "")
-            {
-                let aspect = this.mediaWrapper.style.aspectRatio.split('/');
-                let width = parseInt(aspect[0]) * 2.0;
-                let height = parseInt(aspect[1]) * 1.0;
-                if(width == null) {return; }
-                let perc = (width / height) * 100.0;
-                this.mediaWrapper.style.width = perc + "%";
-            }
-        };
-
-
-        this.processContent = async function()
-        {
-            this.content = await awaitElem(this.mediaWrapper, ".ImageGif > img.ImageGif-Thumbnail, video");
-            await awaitElem(this.mediaWrapper, '.TapTracker, .embeddedPlayer a[href^="/watch/"]');
-            this.metaData = await awaitElem(this.mediaWrapper, '.GifPreview-MetaInfo,.Player-MetaInfo,.userInfo');
-
-            if(this.mediaWrapper.className.includes('GifPreview_isGallery') || this.mediaWrapper.className.includes('Player_isGallery'))
-            {
-                let gallery = this.mediaWrapper.querySelector('.GalleryGif .swiper-wrapper');
-                if(!gallery) { return; }
-
-                let swipes = gallery.querySelectorAll('.swiper-slide');
-
-                this.urls = new Array(swipes.length);
-                for(let i = 0; i < swipes.length; i++)
-                {
-                    this.urls[i] = swipes[i].querySelector('video,img')?.src;
-                    if(swipes[i].className.includes('swiper-slide-active'))
-                    {
-                        this.curItem = i;
-                    }
-                }
-            }
-            else if (this.mediaWrapper.className.includes('GifPreview_isImage') || this.mediaWrapper.className.includes('Player_isImage'))
-            {
-                let image = this.mediaWrapper.querySelector('.ImageGif > img');
-                if(image)
-                {
-                    this.curItem = 0;
-                    this.urls = [image.src];
-                }
-            }
-            else if (this.mediaWrapper.className.includes('GifPreview_isVideo') || this.mediaWrapper.className.includes('Player_isVideo') || this.mediaWrapper.className.includes('routeWrapper'))
-            {
-                let video = await awaitElem(this.mediaWrapper, 'video');
-               /* while(!video.src.includes("?expires") && video.src.substr(-4, 1) != '.' && video.src.substr(-3, 1) != '.')
-                {
-                    await returnOnChange(video, {childList: false, subtree: false, attributes: true}, function(){});
-
-                }*/
-                if(video)
-                {
-                    this.curItem = 0;
-                    this.urls = [video.src];
-                }
-            }
-        };
-
-
-        this.processSidebar = function()
-        {
-            let qualBtn = this.sideBar.querySelector('.QualityButton > svg, .gifQuality');
-            if(qualBtn != null && !this.content?.src?.includes('-mobile.'))
-            {
-                qualBtn.innerHTML = hdSVGPaths;
-                let parent = qualBtn.parentElement;
-                parent.className = parent.className.replace(' sd', ' hd');
-            }
-            console.log("add dl htutt");
-            this.createDownloadBtn();
-        };
-
-        this.getCurIndex = function()
-        {
-            if(this.urls.length <= 1) { return 0; }
-
-            this.gallery = this.mediaWrapper.querySelector('.TapTracker .GalleryGif .swiper-wrapper');
-            if(this.gallery != null)
-            {
-                let swipes = this.gallery.querySelectorAll('.swiper-slide');
-                for(let i = 0; i < swipes.length; i++)
-                {
-                    if(swipes[i].className.includes('swiper-slide-active'))
-                    {
-                        return i;
-                    }
-                }
-            }
-            return this.curItem;
-        };
-
-
-        this.createDownloadBtn = function()
-        {
-           // if(this.curItem < 0) { return; }
-
-            let existingButtons = this.sideBar.querySelectorAll('li.SideBar-Item:has(> .rgDlBtn), li.button:has(> .rgDlBtn)');
-
-            if (existingButtons.length == 0)
-            {
-                let dlWrap = document.createElement('li');
-                dlWrap.className = 'SideBar-Item';
-
-                this.dlBtn = document.createElement("button");
-                this.dlBtn.className = "rgDlBtn";
-
-                dlWrap.appendChild(this.dlBtn);
-                if(this.sideBar.className.includes('buttons')) {
-                    dlWrap.className = 'button';
-                    this.sideBar.appendChild(dlWrap); }
-                else { this.sideBar.firstElementChild.appendChild(dlWrap); }
-
-                this.dlBtn.innerHTML = dlSVG;
-            }
-            else
-            {
-                for(let i = 1; i < existingButtons.length; i++)
-                {
-                    existingButtons[i].remove();
-                }
-
-                this.dlBtn = existingButtons[0];
-            }
-            this.dlBtn.onclick = (e) => {
-                //Re-associate the download button with the element it's actually on now, as the site moves the panel around instead of making a unique sidebar for each entry...
-                let mediaElem = e.target.closest('div[rghd]');
-
-                if(mediaElem) {
-                    console.log("foiund media elem");
-                    console.log(mediaElem);
-                    mediaElem.rghd.dlBtn = e.target;
-                    mediaElem.rghd.download();
-                }
-                else
-                {
-                    this.download();
-                }
-            };
-        };
-
-        this.download = async function()
-        {
-            this.downloadBtnToggle(false);
-            await this.processContent();
-
-            if(this.curItem < 0) {
-                 this.downloadBtnToggle(true);
-                return;
-            }
-            let curItem = this.getCurIndex();
-
-            let contentSrc = this.urls[curItem];
-            let appendNum = this.urls.length > 1 ? curItem + 1 : -1;
-
-            if (contentSrc != null) {
-                let filename = getFilenameFromMetaData(this.metaData, contentSrc, this.urls[0], appendNum);
-
-                this.downloadURL(contentSrc, filename);
-                if(this.gallery != null)
-                {
-                    this.gallery.querySelector('.GalleryGifNav > button[aria-label*="next"]')?.click();
-                }
-            }
-            else
-            {
-                alert("error: no URL!");
-                this.downloadBtnToggle(true);
-            }
-        };
-
-        this.downloadURL = async function(url, filename)
-        {
-            GM_download({
-                url: url,
-                name: filename,
-                onload: () => { this.downloadSuccess(); },
-                onerror: (e) => { this.downloadFailed(e); },
-                ontimeout: (e) => { this.downloadFailed(e); }
-            });
-        };
-        this.downloadSuccess = function()
-        {
-            this.downloadBtnToggle(true);
-        };
-
-        this.downloadFailed = function(err)
-        {
-            console.log(err);
-            this.downloadBtnToggle(true);
-        };
-
-        this.downloadBtnToggle = function(enabled)
-        {
-            if(!enabled)
-            {
-                this.dlBtn.setAttribute('disabled','');
-            }
-            else
-            {
-                if(this.dlBtn.hasAttribute('disabled'))
-                {
-                    this.dlBtn.removeAttribute('disabled');
-                }
-            }
-        };
-
-        this.onAddedNodes = function(root, addedNodes)
-        {
-            addedNodes.forEach((node) => {
-                if(node.className.includes('-SideBarWrap'))
-                {
-                    console.log("added node");
-                    root.rghd.update();
-                }
-            });
-        };
         this.applyStyling();
         this.setup();
     }
@@ -746,7 +812,7 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function awaitElem(root, query, mutationArgs = {childList: true, subtree: true, attributes: false})
+async function awaitElem(root, query, mutationArgs = {childList: true, subtree: true, attributes: false, characterData: true})
 {
     const findElem = (rootElem, query, observer, resolve) =>
     {
