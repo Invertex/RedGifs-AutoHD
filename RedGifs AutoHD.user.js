@@ -808,10 +808,6 @@ function addHasModifiedClass(elem)
     return false;
 }
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
 async function awaitElem(root, query, mutationArgs = {childList: true, subtree: true, attributes: false, characterData: true})
 {
     const findElem = (rootElem, query, observer, resolve) =>
