@@ -9,7 +9,7 @@
 // @supportURL https://github.com/Invertex/RedGifs-AutoHD
 // @updateURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
 // @downloadURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
-// @version 2.40
+// @version 2.45
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
 // @match *://*.redgifs.com/*
@@ -35,6 +35,11 @@ const modifiedAttr = "gfyHD";
 GM_addStyle(`
 body.gfyHD {
  overflow: auto !important;
+}
+.GifPreview {
+overflow: revert !important;
+  width: 80% !important;
+  max-width: 100% !important;
 }
 .GifPreview-MetaInfo {
  opacity: 4%;
@@ -67,28 +72,44 @@ infinite-scroll-component {
 }
 .previewFeed > .seeMoreBlock,
 .previewFeed > .nicheListWidget {
-  max-width: 95% !important;
+  max-width: 100%% !important;
 }
 .previewFeed > .trendingTags,
 .explorePage > .trendingTags,
 .explorePage > .nicheListWidget {
   height: auto !important;
 }
+.previewFeed > .injection { width: 95% !important; }
+.previewFeed > .injection > .nicheListWidget {
+ width: 100% !important;
+ max-width: 100% !important;
+ height: auto !important;
+}
 .previewFeed > .nicheListWidget > .columns,
-.explorePage > .nicheListWidget > .columns {
+.explorePage > .nicheListWidget > .columns,
+.previewFeed > .injection > .nicheListWidget > .columns,
+.explorePage > .injection > .nicheListWidget > .columns{
   column-count: 8 !important;
   row-count: 1 !important;
 }
+.nicheListWidget .rows {
+display: flex !important;
+flex-direction: row !important;
+}
 .nicheListWidget .rows .row {
-  display: contents !important;
+  display: flex !important;
   flex-direction: unset !important;
   .title {
     width: auto !important;
   }
 }
+.nicheGifListContainer > .nicheGiftList { width: 100% !important; }
 .nicheGifList .previewFeed {
   margin: auto !important;
+  overflow: revert !important;
+  width: 100% !important;
 }
+.routeWrapper > .nichePage { max-width: 95%; }
 .seeMoreBlock > .contents.grid {
   grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
   grid-template-rows: repeat(1, minmax(0, 1fr)) !important;
@@ -133,6 +154,10 @@ infinite-scroll-component {
 .rgDlBtn[downloading] > .rgDlSVG > path,.rgDlBtn[disabled] > .rgDlSVG > path {
     fill: rgba(255,255,255,0.2);
 }
+.rgDlSVG {
+width: 34px;
+height: 34px;
+}
 .rgDlSVG:hover {
   background-color: rgba(143, 44, 242, 0.5);
   border-radius: 12px;
@@ -146,10 +171,27 @@ infinite-scroll-component {
   padding-bottom: 3px;
 }
 .rghd_sidebarwrap {
-  position: absolute;
-  right: -58px;
-  bottom: 20px;
+  position: relative;
 }
+.rghd_sidebarwrap_embed {
+  position: relative;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  bottom: 28px;
+  opacity: 60%;
+}
+.rghd_sidebarwrap_embed:hover {
+  opacity: 100%;
+}
+.rghd_sidebarwrap_embed > .sidebar > .item {
+  opacity: 40%;
+}
+.rghd_sidebarwrap_embed > .sidebar > .item:hover {
+  opacity: 80%;
+}
+.rghd_sidebarwrap_embed > .sidebar { gap: 8px !important; }
+.rghd_sideBar { margin-top: 30px; }
 @keyframes dl-animation
 {
     0%
@@ -172,9 +214,13 @@ infinite-scroll-component {
 .nicheListWidget > .rows {
   min-height: 0px !important;
 }
-.skyWrapper > .middle {
+.skyWrapper > .middle, .previewFeed, .previewFeed > div, .middle > .creatorContent {
   width: 70% !important;
 }
+.gfyHD > .fullScreenNavContainer,.gifList > .fullScreenNavContainer {
+  max-width: 100% !important;
+}
+
 /* OUTTER FEED CONTAINERS */
 
 .middle > .page,
@@ -204,20 +250,19 @@ min-width: 95% !important;
 }
 /* FEED ITEMS */
 .previewFeed > div {
-width: auto !important;
 max-width: calc(100% - 58px) !important;
 }
 /* REMOVE ANNOYANCES */
-div[class*="adBox"],div:has(> iframe[rel*="sponsored"]) { display: none !important; }
+div[class*="adBox"],div:has(> iframe[rel*="sponsored"]),.OnlyFansCreatorsSidebar, .previewFeed > .VisibleOnly { display: none !important; }
 `);
 
-const dlSVG = '<svg class="rgDlSVG" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill="white" d="m 3.9472656,2.0820312 c -0.9135398,0 -0.9135398,1.4375 0,1.4375 H 21 c 0.913541,0 0.913541,-1.4375 0,-1.4375 z m 8.5253904,3.484375 c -0.380641,0 -0.759765,'+
+const dlSVG = '<span><svg class="rgDlSVG" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill="white" d="m 3.9472656,2.0820312 c -0.9135398,0 -0.9135398,1.4375 0,1.4375 H 21 c 0.913541,0 0.913541,-1.4375 0,-1.4375 z m 8.5253904,3.484375 c -0.380641,0 -0.759765,'+
       '0.1798801 -0.759765,0.5390626 V 17.886719 c 0,0.862037 -2.6e-4,1.723988 -0.457032,1.292969 L 5.1660156,14.007812 c -0.4567702,-0.431018 -1.9800328,0.287496 -1.21875,1.00586 l 6.6992184,5.603516 c 1.82708,1.43673 1.827215,1.43673 3.654297,0 L 21,15.013672 c 0.761283,'+
-      '-0.718364 -0.609723,-1.580552 -1.21875,-1.00586 l -6.089844,5.171876 c -0.456769,0.431019 -0.457031,-0.430932 -0.457031,-1.292969 V 6.1054688 c 0,-0.3591825 -0.381078,-0.5390626 -0.761719,-0.5390626 z"></path></svg>';
+      '-0.718364 -0.609723,-1.580552 -1.21875,-1.00586 l -6.089844,5.171876 c -0.456769,0.431019 -0.457031,-0.430932 -0.457031,-1.292969 V 6.1054688 c 0,-0.3591825 -0.381078,-0.5390626 -0.761719,-0.5390626 z"></path></svg></span>';
 
-const linkSVG = `<svg class="rgDlSVG" xmlns="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" version="1.1" id="Layer_1" x="0px" y="0px" width="24" height="24" viewBox="0 0 512 512" enable-background="new 0 0 512 512" xml:space="preserve" data-google-analytics-opt-out="">
+const linkSVG = `<span><svg class="rgDlSVG" xmlns="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" version="1.1" id="Layer_1" x="0px" y="0px" width="24" height="24" viewBox="0 0 512 512" enable-background="new 0 0 512 512" xml:space="preserve" data-google-analytics-opt-out="">
 <path fill="white" d="M459.654,233.373l-90.531,90.5c-49.969,50-131.031,50-181,0c-7.875-7.844-14.031-16.688-19.438-25.813  l42.063-42.063c2-2.016,4.469-3.172,6.828-4.531c2.906,9.938,7.984,19.344,15.797,27.156c24.953,24.969,65.563,24.938,90.5,0  l90.5-90.5c24.969-24.969,24.969-65.563,0-90.516c-24.938-24.953-65.531-24.953-90.5,0l-32.188,32.219  c-26.109-10.172-54.25-12.906-81.641-8.891l68.578-68.578c50-49.984,131.031-49.984,181.031,0  C509.623,102.342,509.623,183.389,459.654,233.373z M220.326,382.186l-32.203,32.219c-24.953,24.938-65.563,24.938-90.516,0  c-24.953-24.969-24.953-65.563,0-90.531l90.516-90.5c24.969-24.969,65.547-24.969,90.5,0c7.797,7.797,12.875,17.203,15.813,27.125  c2.375-1.375,4.813-2.5,6.813-4.5l42.063-42.047c-5.375-9.156-11.563-17.969-19.438-25.828c-49.969-49.984-131.031-49.984-181.016,0  l-90.5,90.5c-49.984,50-49.984,131.031,0,181.031c49.984,49.969,131.031,49.969,181.016,0l68.594-68.594  C274.561,395.092,246.42,392.342,220.326,382.186z"/>
-</svg>`;
+</svg></span>`;
 
 const hdSVGPaths = '<path fill-rule="evenodd" clip-rule="evenodd" d="M1.16712 2.51909C0 4.12549 0 6.41699 0 11C0 15.583 0 17.8745 1.16712 19.4809C1.54405 19.9997 2.00029 20.456 2.51909 '+
       '20.8329C4.12549 22 6.41699 22 11 22C15.583 22 17.8745 22 19.4809 20.8329C19.9997 20.456 20.456 19.9997 20.8329 19.4809C22 17.8745 22 15.583 22 11C22 6.41699 22 4.12549 20.8329 2.51909C20.456 2.00029 19.9997 1.54405 19.4809 1.16712C17.8745 0 15.583 0 11 0C6.41699 0 4.12549 '+
@@ -375,49 +420,46 @@ async function processFeedEntry(mediaWrapper)
     {//Not content, skip
         return;
     }
-
     mediaWrapper.rghd = new MediaElem(mediaWrapper, false);
 }
 
 function getFilenameFromMetaData(metaData, mediaURLs, curItem)
 {
     if(mediaURLs.length == 0) { return ""; }
-
     let mediaURL = mediaURLs[curItem];
     let username = "";
-    let date = "";
+    //let date = "";
     let description = "";
 
     if(metaData != null)
     {
-        let link = metaData.querySelector('.UserInfo-UserLink, .text > .author > a');
+        let userLink = metaData.querySelector('.userInfoWrap a.userAvatar,.userInfo a.userAvatar');
         let followBtn = metaData.querySelector('.UserInfo-FollowBtn');
-        let dateInfo = metaData.querySelector('.UserInfo-Date, .text > .date > a');
-        let descInfo = metaData.querySelector('.UserInfo-Description');
+       // let dateInfo = metaData.querySelector('.UserInfo-Date, .text > .date > a');
+        let descInfo = metaData.querySelector('p.description .descriptionText');
 
-        if(link != null) { username = link.href.split('/').slice(-1)[0]; }
-        else if (followBtn != null) { username = followBtn.title; }
-
-        if(dateInfo != null)
-        {
-            let datey = new Date(dateInfo.innerText);
-            date = datey.toISOString().split('T')[0];
+        if(userLink != null) { username = userLink.href.split('/').at(-1); }
+        else {
+            username = metaData.querySelector('.userInfoWrap span.userName')?.innerText;
         }
+
+       // if(dateInfo != null)
+       // {
+       //     let datey = new Date(dateInfo.innerText);
+       //     date = datey.toISOString().split('T')[0];
+      //  }
 
         if(descInfo)
         {
-            let moreBtn = descInfo.querySelector('button');
+     //       let moreBtn = descInfo.querySelector('button');
 
           //  if(moreBtn != null)
          //   {
          //       moreBtn.click();
          //       await returnOnChange(moreBtn, {childList: false, subtree: false, attributes: true});
          //   }
-            let desc_text = descInfo.querySelector('.descriptionText');
-            if(desc_text)
-            {
-                description = '_' + desc_text.innerText.substring(0,50).trimEnd();
-            }
+
+            description = '_' + descInfo.innerText.substring(0,50).trimEnd();
         }
     }
 
@@ -430,7 +472,10 @@ function getFilenameFromMetaData(metaData, mediaURLs, curItem)
         let fileOG = mediaURLs[0].split('?')[0].split('/').slice(-1)[0].split('.')[0].split('-')[0];
         file =`${fileOG}_${curItem + 1}_${file}`;
     }
-    let filename = username + '_' + date + description + ' - ' + file + '.' + ext;
+    let filename = file + '.' + ext;
+    if(description) { username += '_' + description; }
+    if(username) { filename = username + ' - ' + filename }
+
     return filename.replace(/[\\/]/g, '_').replace(/[:*<>|]/g, '-').replace(/[?"]/g, '').trim(); //Sanitize filename
 }
 
@@ -467,11 +512,49 @@ class MediaElem
         }
     };
 
+
+
+    addEmbedPauser = function()
+    {
+        let vidLink = this.mediaWrapper?.querySelector('a.videoLink');
+        if(vidLink)
+        {
+            this.link = vidLink.href;
+            vidLink.removeAttribute('href');
+            this.id = this.link.split('/').at(-1);
+            let logobtn = this.mediaWrapper.querySelector('a.logo');
+            if(logobtn)
+            {
+                logobtn.href = this.link;
+            }
+        }
+    };
+
+    async onWrapperAttributesChanged()
+    {
+        await this.updateLinkAndID();
+        await this.processContent();
+    }
+
+    async updateLinkAndID()
+    {
+        if(this.id == "")
+        {
+            if(this.mediaWrapper?.id?.startsWith('gif_')) {
+                let elemID = this.mediaWrapper.id;
+                this.id = elemID.substr(elemID.lastIndexOf('_') + 1).toLowerCase();
+            }
+            else if(this.mediaWrapper.hasAttribute('data-feed-item-id')) {
+                this.id = this.mediaWrapper.getAttribute('data-feed-item-id');
+            }
+            this.link = "https://redgifs.com/watch/" + this.id;
+        }
+    }
+
     async update()
     {
         await this.updateLinkAndID();
-        this.sideBar = await awaitElem(this.mediaWrapper, "div:has(> ul.SideBar), .embeddedPlayer:has(>.userInfo) > div.buttons");
-
+        this.sideBar = await awaitElem(this.mediaWrapper, "div > ul.sideBar,div > ul.sidebar,.embeddedPlayer:has(>.userInfo) > div.buttons");
         if(this.sideBar != null)
         {
             this.processSidebar();
@@ -488,54 +571,21 @@ class MediaElem
 
     };
 
-    addEmbedPauser = function()
-    {
-        let vidLink = this.mediaWrapper?.querySelector('a.videoLink');
-        if(vidLink)
-        {
-            let logobtn = this.mediaWrapper.querySelector('a.logo');
-            if(logobtn)
-            {
-                logobtn.href = vidLink.href;
-                vidLink.removeAttribute('href');
-            }
-        }
-    };
-
-    async updateLinkAndID()
-    {
-        let link = await awaitElem(this.mediaWrapper, 'a[href*="/watch/"]', {childList: true, subtree: true, attributes: true});
-        this.link = link.href;
-
-        if(this.mediaWrapper?.id?.startsWith('gif_')) {
-            let contentid = this.mediaWrapper.id;
-            this.id = contentid.substr(contentid.lastIndexOf('_') + 1).toLowerCase();
-        }
-        else {
-            this.id = link.href.split('/').at(-1);
-        }
-    }
-
-    async onWrapperAttributesChanged()
-    {
-        await this.updateLinkAndID();
-        await this.processContent();
-    }
-
     setup = async function()
     {
         await this.update();
         doOnAttributeChange(this.mediaWrapper, (elem) => { this.onWrapperAttributesChanged()});
+        watchForChange(this.mediaWrapper, { childList: true, subtree: false, attributes: false},(elem) => this.update());
     };
 
     createSideBar = async function()
     {
         //DOWNLOAD BUTTON
         let dlWrap = document.createElement('li');
-        dlWrap.className = 'SideBar-Item';
+        dlWrap.className = 'item sideBarItem';
 
         this.dlBtn = document.createElement("button");
-        this.dlBtn.className = "rgDlBtn";
+        this.dlBtn.className = "rgDlBtn ViewButton";
         this.dlBtn.innerHTML = dlSVG;
         this.dlBtn.title = "Download";
         this.dlBtn.onclick = ()=> { this.download(); };
@@ -543,10 +593,10 @@ class MediaElem
 
         // COPY LINK BUTTON
         let copyWrap = document.createElement('li');
-        copyWrap.className = 'SideBar-Item';
+        copyWrap.className = 'item sideBarItem';
 
         this.copyBtn = document.createElement("a");
-        this.copyBtn.className = "rgDlBtn";
+        this.copyBtn.className = "rgDlBtn ViewButton";
         this.copyBtn.innerHTML = linkSVG;
         this.copyBtn.title = "File Link (if Download won't work, click this instead)";
        // this.copyBtn.onclick = ()=> { this.download(); };
@@ -565,12 +615,15 @@ class MediaElem
             // Let's make our own sidebar, because redgifs does some really stupid re-use stuff
             let sidebar = document.createElement('div');
             this.rghdSideBar = sidebar;
-            sidebar.className = "rghd_sidebarwrap";
+            this.sideBar.parentElement.appendChild(this.rghdSideBar);
+            this.rghdSideBar.appendChild(this.sideBar);
+            if(this.is_embed) { sidebar.className = "rghd_sidebarwrap_embed"; } else { sidebar.className = "rghd_sidebarwrap"; }
+            
             let sblist = document.createElement('ul');
-            sidebar.appendChild(sblist);
+            sblist.className = "sidebar sideBar rghd_sideBar";
+            this.rghdSideBar.appendChild(sblist);
             sblist.appendChild(dlWrap);
             sblist.appendChild(copyWrap);
-            this.mediaWrapper.appendChild(sidebar);
         }
 
         this.dlBtn.setAttribute('rgDL-disabled','');
@@ -587,10 +640,10 @@ class MediaElem
     processContent = async function()
     {
         this.metaData = await awaitElem(this.mediaWrapper, '.GifPreview-MetaInfo,.Player-MetaInfo,.userInfo');
-
         if(!this.is_embed)
         {
-            await awaitElem(this.mediaWrapper.parentElement, ".GifPreview_isVideo,.Player_isVideo,.GifPreview_isImage,.Player_isImage,.GifPreview_isGallery,.Player_isGallery", {subtree: true, childList: false, attributes: true});
+            let tapper = await awaitElem(this.mediaWrapper, '.TapTracker', {subtree: false, childList: true, attributes: true});
+            await awaitElem(this.mediaWrapper.parentElement, ".GifPreview_isVideo,.Player_isVideo,.GifPreview_isImage,.Player_isImage,.GifPreview_isGallery,.Player_isGallery", {subtree: true, childList: true, attributes: true});
         }
         this.urls = [];
         let foundContent = false;
@@ -615,6 +668,7 @@ class MediaElem
         }
         else if (this.mediaWrapper.classList.contains('GifPreview_isImage') || this.mediaWrapper.classList.contains('Player_isImage'))
         {
+            console.log("is image");
             this.content = await awaitElem(this.mediaWrapper, `.ImageGif > img.ImageGif-Thumbnail[src*=${this.id} i]`,
                                        {childList: true, subtree: true, attributes: true, characterData: true, attributeOldValue: true});
             if(this.content)
@@ -651,7 +705,7 @@ class MediaElem
 
     processSidebar = function()
     {
-        let qualBtn = this.sideBar.querySelector('.QualityButton > svg, .gifQuality');
+        let qualBtn = this.sideBar.querySelector('.QualityButton > svg, .gifQuality,.gifQualityButton > svg');
         if(qualBtn != null && !this.content?.src?.includes('-mobile.'))
         {
             qualBtn.innerHTML = hdSVGPaths;
@@ -772,6 +826,7 @@ class MediaElem
     constructor(mediaWrapper, isEmbed)
     {
         this.urls = [];
+        this.id = "";
         this.is_embed = isEmbed;
         mediaWrapper.setAttribute('rghd','');
         mediaWrapper.rghd = this;
@@ -953,14 +1008,4 @@ async function watchForElem(root, query, stopAfterFinding, obsArguments, execute
         });
 
     rootObserver.observe(root, obsArguments);
-}
-
-function addGlobalStyle(css) {
-    let head, style;
-    head = document.getElementsByTagName('head')[0];
-    if (!head) { return; }
-    style = document.createElement('style');
-    style.type = 'text/css';
-    style.innerHTML = css;
-    head.appendChild(style);
 }
