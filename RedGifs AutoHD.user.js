@@ -9,7 +9,7 @@
 // @supportURL https://github.com/Invertex/RedGifs-AutoHD
 // @updateURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
 // @downloadURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
-// @version 2.45
+// @version 2.47
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
 // @match *://*.redgifs.com/*
@@ -30,7 +30,7 @@ const redgCDN = '//thcf';
 const hdSubDomain = '//giant.';
 const mobileAffix = '-mobile.';
 const modifiedAttr = "gfyHD";
-
+const mediaClassNames = ['_isVideo','_isImage','_isGallery','routeWrapper'];
 
 GM_addStyle(`
 body.gfyHD {
@@ -358,7 +358,6 @@ unsafeWindow.XMLHttpRequest.prototype.open = exportFunction(function(method, url
 async function processEmbed(root)
 {
     let content = await awaitElem(root, '.Wrapper .routeWrapper,div.player-wrapper,div.iframe-player-container');
-    //let sidebar = await awaitElem(content, ".buttons");
     new MediaElem(content, true);
 }
 
@@ -428,14 +427,12 @@ function getFilenameFromMetaData(metaData, mediaURLs, curItem)
     if(mediaURLs.length == 0) { return ""; }
     let mediaURL = mediaURLs[curItem];
     let username = "";
-    //let date = "";
     let description = "";
 
     if(metaData != null)
     {
         let userLink = metaData.querySelector('.userInfoWrap a.userAvatar,.userInfo a.userAvatar');
         let followBtn = metaData.querySelector('.UserInfo-FollowBtn');
-       // let dateInfo = metaData.querySelector('.UserInfo-Date, .text > .date > a');
         let descInfo = metaData.querySelector('p.description .descriptionText');
 
         if(userLink != null) { username = userLink.href.split('/').at(-1); }
@@ -443,22 +440,8 @@ function getFilenameFromMetaData(metaData, mediaURLs, curItem)
             username = metaData.querySelector('.userInfoWrap span.userName')?.innerText;
         }
 
-       // if(dateInfo != null)
-       // {
-       //     let datey = new Date(dateInfo.innerText);
-       //     date = datey.toISOString().split('T')[0];
-      //  }
-
         if(descInfo)
         {
-     //       let moreBtn = descInfo.querySelector('button');
-
-          //  if(moreBtn != null)
-         //   {
-         //       moreBtn.click();
-         //       await returnOnChange(moreBtn, {childList: false, subtree: false, attributes: true});
-         //   }
-
             description = '_' + descInfo.innerText.substring(0,50).trimEnd();
         }
     }
@@ -477,18 +460,6 @@ function getFilenameFromMetaData(metaData, mediaURLs, curItem)
     if(username) { filename = username + ' - ' + filename }
 
     return filename.replace(/[\\/]/g, '_').replace(/[:*<>|]/g, '-').replace(/[?"]/g, '').trim(); //Sanitize filename
-}
-
-function doOnAttributeChange(elem, onChange, repeatOnce = false)
-{
-    let rootObserver = new MutationObserver((mutes, obvs) => async function()
-    {
-        obvs.disconnect();
-        await onChange(elem);
-        if (repeatOnce == true) { return; }
-        obvs.observe(elem, { childList: false, subtree: false, attributes: true })
-    });
-    rootObserver.observe(elem, { childList: false, subtree: false, attributes: true });
 }
 
 class MediaElem
@@ -512,8 +483,6 @@ class MediaElem
         }
     };
 
-
-
     addEmbedPauser = function()
     {
         let vidLink = this.mediaWrapper?.querySelector('a.videoLink');
@@ -530,12 +499,6 @@ class MediaElem
         }
     };
 
-    async onWrapperAttributesChanged()
-    {
-        await this.updateLinkAndID();
-        await this.processContent();
-    }
-
     async updateLinkAndID()
     {
         if(this.id == "")
@@ -551,7 +514,7 @@ class MediaElem
         }
     }
 
-    async update()
+    async setupSidebar()
     {
         await this.updateLinkAndID();
         this.sideBar = await awaitElem(this.mediaWrapper, "div > ul.sideBar,div > ul.sidebar,.embeddedPlayer:has(>.userInfo) > div.buttons");
@@ -569,13 +532,6 @@ class MediaElem
             }
         }
 
-    };
-
-    setup = async function()
-    {
-        await this.update();
-        doOnAttributeChange(this.mediaWrapper, (elem) => { this.onWrapperAttributesChanged()});
-        watchForChange(this.mediaWrapper, { childList: true, subtree: false, attributes: false},(elem) => this.update());
     };
 
     createSideBar = async function()
@@ -618,7 +574,7 @@ class MediaElem
             this.sideBar.parentElement.appendChild(this.rghdSideBar);
             this.rghdSideBar.appendChild(this.sideBar);
             if(this.is_embed) { sidebar.className = "rghd_sidebarwrap_embed"; } else { sidebar.className = "rghd_sidebarwrap"; }
-            
+
             let sblist = document.createElement('ul');
             sblist.className = "sidebar sideBar rghd_sideBar";
             this.rghdSideBar.appendChild(sblist);
@@ -628,7 +584,8 @@ class MediaElem
 
         this.dlBtn.setAttribute('rgDL-disabled','');
         this.copyBtn.setAttribute('rgDL-disabled','');
-        let enabled = await this.processContent();
+
+        const enabled = await this.processContent();
         if(enabled === true)
         {
             this.dlBtn.removeAttribute('rgDL-disabled');
@@ -636,24 +593,23 @@ class MediaElem
         }
     };
 
-
     processContent = async function()
     {
+        this.urls = [];
+        let foundContent = false;
         this.metaData = await awaitElem(this.mediaWrapper, '.GifPreview-MetaInfo,.Player-MetaInfo,.userInfo');
         if(!this.is_embed)
         {
             let tapper = await awaitElem(this.mediaWrapper, '.TapTracker', {subtree: false, childList: true, attributes: true});
-            await awaitElem(this.mediaWrapper.parentElement, ".GifPreview_isVideo,.Player_isVideo,.GifPreview_isImage,.Player_isImage,.GifPreview_isGallery,.Player_isGallery", {subtree: true, childList: true, attributes: true});
         }
-        this.urls = [];
-        let foundContent = false;
 
-        if(this.mediaWrapper.classList.contains('GifPreview_isGallery') || this.mediaWrapper.classList.contains('Player_isGallery'))
+        const mtype = await awaitClassName(this.mediaWrapper, mediaClassNames);
+
+        if(mtype == '_isGallery')
         {
             let gallery = await awaitElem(this.mediaWrapper,`.GalleryGif .swiper-wrapper`,
                                            {childList: true, subtree: true, attributes: true});
-            if(!gallery) { return; }
-
+            if(!gallery) { foundContent; }
             gallery = gallery.parentElement;
             let swipes = gallery.querySelectorAll('.swiper-slide');
 
@@ -666,18 +622,7 @@ class MediaElem
                 }
             }
         }
-        else if (this.mediaWrapper.classList.contains('GifPreview_isImage') || this.mediaWrapper.classList.contains('Player_isImage'))
-        {
-            console.log("is image");
-            this.content = await awaitElem(this.mediaWrapper, `.ImageGif > img.ImageGif-Thumbnail[src*=${this.id} i]`,
-                                       {childList: true, subtree: true, attributes: true, characterData: true, attributeOldValue: true});
-            if(this.content)
-            {
-                this.curItem = 0;
-                this.urls.push(this.content.src);
-            }
-        }
-        else if (this.mediaWrapper.classList.contains('GifPreview_isVideo') || this.mediaWrapper.classList.contains('Player_isVideo') || this.mediaWrapper.classList.contains('routeWrapper'))
+        else if (mtype == '_isVideo' || mtype == 'routeWrapper')
         {
             const video = await awaitElem(this.mediaWrapper,`video[src*="${this.id}" i]`, {childList: true, subtree: true, attributes: true, characterData: true, attributeOldValue: true});
             if(video)
@@ -686,22 +631,41 @@ class MediaElem
                 this.urls.push(video.src);
             }
         }
+        else if (mtype == '_isImage')
+        {
+            this.content = await awaitElem(this.mediaWrapper, `.ImageGif > img.ImageGif-Thumbnail[src*=${this.id} i]`,
+                                       {childList: true, subtree: true, attributes: true, characterData: true, attributeOldValue: true});
+            if(this.content)
+            {
+                this.curItem = 0;
+                this.urls.push(this.content.src);
+            }
+        }
 
         if(this.urls.length > 0)
         {
             foundContent = true;
-            this.copyBtn.href = this.urls[0];
-            this.copyBtn.target = '_blank';
-            this.copyBtn.download = getFilenameFromMetaData(this.metaData, this.urls, 0);
-            this.copyBtn.addEventListener('mousedown', (e) => {
-                GM_setClipboard(this.copyBtn.download, "text");
-            }, {passive: true});
-
+            for(let i = this.urls.length; i > 0; i--)
+            {
+                this.copyElement(i - 1);
+            }
         }
 
         return foundContent;
     };
 
+    copyElement = function(idx)
+    {
+        if(idx < this.urls.length)
+        {
+            this.copyBtn.href = this.urls[idx];
+            this.copyBtn.target = '_blank';
+            this.copyBtn.download = getFilenameFromMetaData(this.metaData, this.urls, idx);
+            this.copyBtn.addEventListener('mousedown', (e) => {
+                GM_setClipboard(this.copyBtn.download, "text");
+            }, {passive: true});
+        }
+    };
 
     processSidebar = function()
     {
@@ -765,8 +729,6 @@ class MediaElem
             this.downloadBtnToggle(true);
         }
     };
-
-
 
     downloadURL = function(url, filename)
     {
@@ -833,7 +795,7 @@ class MediaElem
         this.mediaWrapper = mediaWrapper;
 
         this.applyStyling();
-        this.setup();
+        this.setupSidebar();
     }
 }
 
@@ -967,7 +929,7 @@ function watchForAddedNodes(root, onNodesAdded, obsArgs = {childList: true, subt
 
 function returnOnChange(target, obsArguments, resolve)
 {
-     return new Promise(resolve => watchForChange(target, obsArguments, resolve));
+     return new Promise(resolve => watchForChange(target, obsArguments, resolve, true));
 }
 
 function watchForChange(root, obsArguments, onChange, stopAfter = false)
@@ -1008,4 +970,56 @@ async function watchForElem(root, query, stopAfterFinding, obsArguments, execute
         });
 
     rootObserver.observe(root, obsArguments);
+}
+
+function awaitClassName(elem, names)
+{
+    return new Promise((resolve, reject) =>
+    {
+        const elemid = elem.getAttribute('data-feed-item-id');
+        if(anyNameInStr(elem.className, names, resolve)) { return; }
+
+        let rootObserver = new MutationObserver(
+        (mutes, obvs) => function()
+        {
+            obvs.disconnect();
+            let elemClassName = elem.className;
+
+            for(let i = 0; i < names.length; i++)
+            {
+                if(elemClassName.includes(names[i]))
+                {
+                    resolve(names[i]);
+                    return;
+                }
+            }
+            obvs.observe(elem, { childList: false, subtree: false, attributes: true, attributeFilter: ['class']})
+        });
+
+        rootObserver.observe(elem, { childList: false, subtree: false, attributes: true, attributeFilter: ['class']});
+
+        // Handle weird race condition issue where current classname doesn't match but MutationObserver not picking up a change that is seemingly pending during its observe startup
+        sleep(0.05).then(()=>{
+            if(anyNameInStr(elem.className, names, resolve)) {
+                rootObserver?.disconnect();
+            }
+        });
+    });
+}
+
+function anyNameInStr(inString, names, callback = null)
+{
+    for(let i = 0; i < names.length; i++)
+    {
+        if(inString.includes(names[i]))
+        {
+            if(callback) { callback(names[i]); }
+            return true;
+        }
+    }
+    return false;
+}
+
+async function sleep(seconds) {
+    return new Promise((resolve) =>setTimeout(resolve, seconds * 1000));
 }
