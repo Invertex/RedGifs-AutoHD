@@ -9,7 +9,7 @@
 // @supportURL https://github.com/Invertex/RedGifs-AutoHD
 // @updateURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
 // @downloadURL https://github.com/Invertex/RedGifs-AutoHD/raw/master/RedGifs%20AutoHD.user.js
-// @version 2.47
+// @version 2.48
 // @match *://*.gifdeliverynetwork.com/*
 // @match *://cdn.embedly.com/widgets/media.html?src=*://*.redgifs.com/*
 // @match *://*.redgifs.com/*
@@ -490,7 +490,7 @@ class MediaElem
         {
             this.link = vidLink.href;
             vidLink.removeAttribute('href');
-            this.id = this.link.split('/').at(-1);
+            this.id = this.link.split('/').at(-1)?.split('?')[0];
             let logobtn = this.mediaWrapper.querySelector('a.logo');
             if(logobtn)
             {
@@ -510,6 +510,7 @@ class MediaElem
             else if(this.mediaWrapper.hasAttribute('data-feed-item-id')) {
                 this.id = this.mediaWrapper.getAttribute('data-feed-item-id');
             }
+            this.id = this.id.split('?')[0];
             this.link = "https://redgifs.com/watch/" + this.id;
         }
     }
@@ -625,6 +626,7 @@ class MediaElem
         else if (mtype == '_isVideo' || mtype == 'routeWrapper')
         {
             const video = await awaitElem(this.mediaWrapper,`video[src*="${this.id}" i]`, {childList: true, subtree: true, attributes: true, characterData: true, attributeOldValue: true});
+
             if(video)
             {
                 this.curItem = 0;
@@ -976,7 +978,7 @@ function awaitClassName(elem, names)
 {
     return new Promise((resolve, reject) =>
     {
-        const elemid = elem.getAttribute('data-feed-item-id');
+        const elemid = elem.getAttribute('data-feed-item-id')?.split('?')[0];
         if(anyNameInStr(elem.className, names, resolve)) { return; }
 
         let rootObserver = new MutationObserver(
